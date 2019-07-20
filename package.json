@@ -1,0 +1,22 @@
+{
+  "name": "browser-record-server",
+  "version": "0.1.0",
+  "description": "API for browser-record",
+  "author": "Dylan Huang",
+  "license": "ISC",
+  "scripts": {
+    "dev": "now dev"
+  },
+  "engine": {
+    "node": "8.10.x"
+  },
+  "dependencies": {
+    "mongoose": "^5.6.5"
+  },
+  "devDependencies": {
+    "eslint": "^5.16.0",
+    "eslint-config-airbnb-base": "^13.2.0",
+    "eslint-plugin-import": "^2.18.1",
+    "now": "^15.8.3"
+  }
+}

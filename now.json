@@ -1,0 +1,16 @@
+{
+  "name": "browser-record-server",
+  "version": 2,
+  "builds": [{ "src": "./api/*.js", "use": "@now/node" }],
+  "env": {
+    "MONGODB_URI": "@mongodb-uri"
+  },
+  "routes": [
+    { "src": ".*", "headers":
+      {
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Headers": "*"
+      }
+    }
+  ]
+}
