@@ -37,8 +37,7 @@ export default async (req, res) => {
     // Connect database, cached or otherwise
     await connectToDatabase(process.env.MONGODB_URI);
 
-    const session = new Session(req.body);
-    await Session.updateOrCreate(session);
+    new Session(req.body).save();
     res.status(200).json('OK'); // OK
   } catch (error) {
     console.error(error);
