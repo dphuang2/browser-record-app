@@ -1,4 +1,7 @@
-import { Schema, model } from 'mongoose';
+import mongoose, { Schema, model } from 'mongoose';
+
+mongoose.set('useCreateIndex', true);
+
 
 const sessionSchema = new Schema({
   events: [{}],
@@ -6,6 +9,7 @@ const sessionSchema = new Schema({
   shop: String,
   id: String,
 });
+
 
 sessionSchema.statics.aggregateSessions = async function aggregateSessions() {
   await this.aggregate([
