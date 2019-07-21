@@ -8,7 +8,7 @@ export default async (req, res) => {
   try {
     if (req.method === 'POST') {
       if (!req.body) {
-        res.status(204).send('Empty');
+        res.status(204).send();
         return;
       }
 
@@ -16,12 +16,17 @@ export default async (req, res) => {
       await connectToDatabase(process.env.MONGODB_URI);
 
       await new Session(req.body).save();
+      res.status(201).send();
     } else if (req.method === 'GET') {
       await connectToDatabase(process.env.MONGODB_URI);
 
-      await Session.aggregateSessions();
+      const session = await Session.aggregateSessions(req.query.id);
+      if (session.length === 0) {
+        res.status(404).send();
+        return;
+      }
+      res.status(200).json(session);
     }
-    res.status(200).send('OK'); // OK
   } catch (error) {
     console.error(error);
     res.status(500).send({ error }); // Error

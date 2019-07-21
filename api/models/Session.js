@@ -2,7 +2,6 @@ import mongoose, { Schema, model } from 'mongoose';
 
 mongoose.set('useCreateIndex', true);
 
-
 const sessionSchema = new Schema({
   events: [{}],
   timestamp: Number,
@@ -10,9 +9,17 @@ const sessionSchema = new Schema({
   id: String,
 });
 
+sessionSchema.statics.findOldest = async function findOldest(id) {
+  return this.find({ id });
+};
 
-sessionSchema.statics.aggregateSessions = async function aggregateSessions() {
-  await this.aggregate([
+sessionSchema.statics.aggregateSessions = async function aggregateSessions(id) {
+  return this.aggregate([
+    { // Query for session id
+      $match: {
+        id,
+      },
+    },
     { // Sort all the documents by timestamp in ascending order
       $sort: {
         timestamp: 1,
@@ -42,9 +49,6 @@ sessionSchema.statics.aggregateSessions = async function aggregateSessions() {
           },
         },
       },
-    },
-    { // Replace existing collection
-      $out: 'sessions',
     },
   ]);
 };

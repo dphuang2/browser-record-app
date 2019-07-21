@@ -1,16 +1,36 @@
 {
   "name": "browser-record-server",
   "version": 2,
-  "builds": [{ "src": "./api/*.js", "use": "@now/node" }],
+  "builds": [{
+    "src": "./api/*.js",
+    "use": "@now/node"
+  }],
   "env": {
     "MONGODB_URI": "@mongodb-uri"
   },
   "routes": [
-    { "src": ".*", "headers":
-      {
+    {
+      "src": "/sessions",
+      "headers": {
         "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Headers": "*"
-      }
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers": "Content-Type"
+      },
+      "continue": true
+    },
+    { "src": "/sessions",
+      "status": 200,
+      "methods": ["OPTIONS"]
+    },
+    {
+      "src": "/sessions/([0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{12})$",
+      "dest": "/api/sessions.js?id=$1",
+      "methods": ["GET"]
+    },
+    {
+      "src": "/sessions",
+      "dest": "/api/sessions.js",
+      "methods": ["POST"]
     }
   ]
 }
