@@ -1,10 +1,16 @@
 {
   "name": "browser-record-server",
   "version": 2,
-  "builds": [{
+  "builds": [
+    {
     "src": "./api/*.js",
     "use": "@now/node"
-  }],
+    },
+    {
+      "src": "./index.html",
+      "use": "@now/static"
+    }
+  ],
   "env": {
     "MONGODB_URI": "@mongodb-uri"
   },
@@ -31,6 +37,11 @@
       "src": "/sessions",
       "dest": "/api/sessions.js",
       "methods": ["POST"]
+    },
+    {
+      "src": "/shops/(.*myshopify.com)$",
+      "dest": "/api/shops.js?shop=$1",
+      "methods": ["GET"]
     }
   ]
 }

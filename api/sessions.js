@@ -17,15 +17,19 @@ export default async (req, res) => {
 
       await new Session(req.body).save();
       res.status(201).send();
-    } else if (req.method === 'GET') {
+    } else if (
+      req.method === 'GET' && (typeof req.query.id) !== 'undefined'
+    ) {
       await connectToDatabase(process.env.MONGODB_URI);
 
-      const session = await Session.aggregateSessions(req.query.id);
+      const session = await Session.getSessionById(req.query.id);
       if (session.length === 0) {
         res.status(404).send();
         return;
       }
       res.status(200).json(session);
+    } else {
+      res.status(418).send();
     }
   } catch (error) {
     console.error(error);
