@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "API for browser-record",
   "author": "Dylan Huang",
+  "repository": "https://browser-record-server.balphi.now.sh",
   "license": "ISC",
   "scripts": {
     "dev": "now dev"
