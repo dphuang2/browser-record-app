@@ -17,9 +17,7 @@ export default async (req, res) => {
 
       await new Session(req.body).save();
       res.status(204).send();
-    } else if (
-      req.method === 'GET' && (typeof req.query.id) !== 'undefined'
-    ) {
+    } else if (req.method === 'GET') {
       await connectToDatabase(process.env.MONGODB_URI);
 
       const session = await Session.getSessionById(req.query.id);
