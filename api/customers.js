@@ -20,12 +20,14 @@ function constructLocationString(geo) {
 export default async (req, res) => {
   try {
     await connectToDatabase(process.env.MONGODB_URI);
-    const data = UAParser(req.headers['user-agent']);
+    const agentData = UAParser(req.headers['user-agent']);
     const remoteIp = getRemoteIp(req);
+    const body = JSON.parse(req.body);
     const customer = {
-      browser: data.browser.name,
-      os: data.os.name,
-      sessionId: req.body,
+      browser: agentData.browser.name,
+      os: agentData.os.name,
+      shop: body.shop,
+      sessionId: body.id,
       remoteIp,
       location: constructLocationString(geoip.lookup(remoteIp)),
     };

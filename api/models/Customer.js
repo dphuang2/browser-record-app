@@ -6,6 +6,7 @@ const customerSchema = new Schema({
   sessionId: String,
   remoteIp: String,
   location: String,
+  shop: String,
 });
 
 const Customer = model('Customer', customerSchema);
