@@ -1,15 +1,10 @@
 {
-  "name": "browser-record-server",
+  "name": "browser-record-app",
   "version": 2,
   "builds": [
-    {
-    "src": "./api/*.js",
-    "use": "@now/node"
-    },
-    {
-      "src": "./index.html",
-      "use": "@now/static"
-    }
+    { "src": "./api/*.js", "use": "@now/node" },
+    { "src": "server.js", "use": "@now/node" },
+    { "src": "package.json", "use": "@now/next" }
   ],
   "env": {
     "MONGODB_URI": "@mongodb-uri"
@@ -18,8 +13,7 @@
     {
       "src": "/sessions",
       "headers": {
-        "Access-Control-Allow-Origin": "*",
-        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type"
       },
       "continue": true
@@ -47,6 +41,10 @@
       "src": "/customers",
       "dest": "/api/customers.js",
       "methods": ["POST"]
+    },
+    {
+      "src": "/auth",
+      "dest": "/server.js"
     }
   ]
 }

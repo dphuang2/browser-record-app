@@ -1,25 +1,32 @@
 {
-  "name": "browser-record-server",
+  "name": "browser-record-app",
   "version": "0.1.0",
-  "description": "API for browser-record",
+  "description": "Application for browser-record",
   "author": "Dylan Huang",
-  "repository": "https://browser-record-server.balphi.now.sh",
+  "repository": "https://github.com/dphuang2/browser-record-app",
   "license": "ISC",
   "scripts": {
-    "dev": "now dev"
+    "build": "next build",
+    "dev": "next",
+    "now-build": "next build"
   },
   "engine": {
     "node": "8.10.x"
   },
   "dependencies": {
     "geoip-lite": "^1.3.7",
+    "koa": "^2.7.0",
     "mongoose": "^5.6.5",
+    "next": "^9.0.2",
+    "react": "^16.8.6",
+    "react-dom": "^16.8.6",
     "ua-parser-js": "^0.7.20"
   },
   "devDependencies": {
     "eslint": "^5.16.0",
     "eslint-config-airbnb-base": "^13.2.0",
     "eslint-plugin-import": "^2.18.1",
+    "eslint-plugin-react": "^7.14.3",
     "now": "^15.8.3"
   }
 }
