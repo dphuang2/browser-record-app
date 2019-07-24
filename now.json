@@ -42,6 +42,11 @@
       "src": "/shops/(.*myshopify.com)$",
       "dest": "/api/shops.js?shop=$1",
       "methods": ["GET"]
+    },
+    {
+      "src": "/customers",
+      "dest": "/api/customers.js",
+      "methods": ["POST"]
     }
   ]
 }

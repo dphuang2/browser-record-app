@@ -19,7 +19,7 @@ const aggregateSessionsById = [
       timestamp: 1,
     },
   },
-  { // Accumulate events and save first timestamp
+  { // Accumulate events and save important metadata
     $group: {
       _id: '$id',
       events: {
