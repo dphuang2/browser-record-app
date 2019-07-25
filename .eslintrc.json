@@ -5,12 +5,17 @@
   },
   "extends": [
     "airbnb-base",
-    "plugin:react/recommended"
+    "plugin:react/recommended",
+    "plugin:shopify/react",
+    "plugin:shopify/polaris",
+    "plugin:shopify/webpack"
   ],
   "globals": {
     "Atomics": "readonly",
     "SharedArrayBuffer": "readonly",
-    "emit": "readonly,"
+    "emit": "readonly",
+    "API_KEY": "readonly",
+    "React": "readonly"
   },
   "parserOptions": {
     "ecmaVersion": 2018,

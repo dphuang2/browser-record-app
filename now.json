@@ -3,11 +3,12 @@
   "version": 2,
   "builds": [
     { "src": "./api/*.js", "use": "@now/node" },
-    { "src": "server.js", "use": "@now/node" },
+    { "src": "/server/server.js", "use": "@now/node" },
     { "src": "package.json", "use": "@now/next" }
   ],
   "env": {
-    "MONGODB_URI": "@mongodb-uri"
+    "MONGODB_URI": "@mongodb-uri",
+    "NODE_ENV": "production"
   },
   "routes": [
     {
@@ -43,8 +44,8 @@
       "methods": ["POST"]
     },
     {
-      "src": "/auth",
-      "dest": "/server.js"
+      "src": "/auth.*",
+      "dest": "/server/server.js"
     }
   ]
 }
