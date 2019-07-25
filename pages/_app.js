@@ -8,10 +8,18 @@ import '@shopify/polaris/styles.css';
 
 class MyApp extends App {
   static getInitialProps({ ctx }) {
+    // Verify that the request has a properly signed token using API_SECRET_KEY
+    // and a "shop" query parameter. If not, redirect it to the proper
+    // authorization URI.
     const shopOrigin = ctx.query.shop;
-    const authUri = `/auth?shop=${shopOrigin}`;
-    if (!shopOrigin || !validateToken(parseCookies(ctx).token, shopOrigin)) {
-      redirect(ctx.res, authUri);
+    const authEndpoint = '/auth';
+    const authUri = `${authEndpoint}?shop=${shopOrigin}`;
+    if (shopOrigin) {
+      if (!validateToken(parseCookies(ctx).token, shopOrigin)) {
+        redirect(ctx.res, authUri);
+      }
+    } else {
+      redirect(ctx.res, authEndpoint);
     }
     return { shopOrigin };
   }

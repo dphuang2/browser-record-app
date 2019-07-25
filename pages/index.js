@@ -6,8 +6,8 @@ import { TitleBar } from '@shopify/app-bridge-react';
 class Index extends React.Component {
   render() {
     return (
-      <Page fullWidth >
-        <TitleBar title="Watch Replays"/>
+      <Page fullWidth>
+        <TitleBar title="Watch Replays" />
         <Card>
           <ResourceList
             resourceName={{ singular: 'customer', plural: 'customers' }}
