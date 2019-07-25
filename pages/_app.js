@@ -1,13 +1,18 @@
 import React from 'react';
 import App, { Container } from 'next/app';
 import { AppProvider } from '@shopify/polaris';
+import { parseCookies } from 'nookies';
 import { Provider } from '@shopify/app-bridge-react';
+import { redirect, validateToken } from '../utils/auth';
 import '@shopify/polaris/styles.css';
 
 class MyApp extends App {
-  // This is a next.js feature...not sure how it works
-  static getInitialProps(server) {
-    const shopOrigin = server.ctx.query.shop;
+  static getInitialProps({ ctx }) {
+    const shopOrigin = ctx.query.shop;
+    const authUri = `/auth?shop=${shopOrigin}`;
+    if (!shopOrigin || !validateToken(parseCookies(ctx).token, shopOrigin)) {
+      redirect(ctx.res, authUri);
+    }
     return { shopOrigin };
   }
 

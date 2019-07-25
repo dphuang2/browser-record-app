@@ -8,38 +8,40 @@
   ],
   "env": {
     "MONGODB_URI": "@mongodb-uri",
-    "NODE_ENV": "production"
+    "SHOPIFY_API_KEY": "@shopify_api_key",
+    "SHOPIFY_API_SECRET_KEY": "@shopify_api_secret_key",
+    "SCOPES": "@scopes"
   },
   "routes": [
     {
-      "src": "/sessions",
+      "src": "/api/sessions",
       "headers": {
         "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type"
       },
       "continue": true
     },
-    { "src": "/sessions",
+    { "src": "/api/sessions",
       "status": 200,
       "methods": ["OPTIONS"]
     },
     {
-      "src": "/sessions/([0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{12})$",
+      "src": "/api/sessions/([0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{12})$",
       "dest": "/api/sessions.js?id=$1",
       "methods": ["GET"]
     },
     {
-      "src": "/sessions",
+      "src": "/api/sessions",
       "dest": "/api/sessions.js",
       "methods": ["POST"]
     },
     {
-      "src": "/shops/(.*myshopify.com)$",
+      "src": "/api/shops/(.*myshopify.com)$",
       "dest": "/api/shops.js?shop=$1",
       "methods": ["GET"]
     },
     {
-      "src": "/customers",
+      "src": "/api/customers",
       "dest": "/api/customers.js",
       "methods": ["POST"]
     },
