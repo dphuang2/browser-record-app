@@ -3,7 +3,6 @@
   "version": 2,
   "builds": [
     { "src": "/api/*.js", "use": "@now/node" },
-    { "src": "/auth/*.js", "use": "@now/node" },
     { "src": "package.json", "use": "@now/next" }
   ],
   "env": {
