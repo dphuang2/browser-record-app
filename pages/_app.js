@@ -1,4 +1,5 @@
 import React from 'react';
+import Router from 'next/router';
 import App, { Container } from 'next/app';
 import { AppProvider } from '@shopify/polaris';
 import { parseCookies } from 'nookies';
@@ -12,16 +13,22 @@ class MyApp extends App {
     // and a "shop" query parameter. If not, redirect it to the proper
     // authorization URI.
     const shopOrigin = ctx.query.shop;
+    return { shopOrigin, token: parseCookies(ctx).token };
+  }
+
+  componentDidMount() {
+    const { shopOrigin } = this.props;
     const authEndpoint = '/auth';
     const authUri = `${authEndpoint}?shop=${shopOrigin}`;
     if (shopOrigin) {
-      if (!validateToken(parseCookies(ctx).token, shopOrigin)) {
-        redirect(ctx.res, authUri);
+      if (!validateToken(this.props.token, shopOrigin)) {
+        Router.push(authUri);
+        // redirect(ctx.res, authUri);
       }
     } else {
-      redirect(ctx.res, authEndpoint);
+      Router.push(authEndpoint);
+      // redirect(ctx.res, authEndpoint);
     }
-    return { shopOrigin };
   }
 
   render() {
