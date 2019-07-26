@@ -7,7 +7,7 @@ const { SHOPIFY_API_SECRET_KEY } = process.env;
 
 export default async (req, res) => {
   const {
-    shop, hmac, code, state,
+    shop, hmac, code, state, timestamp,
   } = req.query;
   const cookies = new Cookies(req, res);
   const stateCookie = cookies.get('state');
@@ -19,10 +19,12 @@ export default async (req, res) => {
 
   if (shop && hmac && code) {
     // Validate request is from Shopify
-    const map = Object.assign({}, req.query);
-    delete map.signature;
-    delete map.hmac;
-    const message = querystring.stringify(map);
+    const message = querystring.stringify({
+      code,
+      shop,
+      state,
+      timestamp,
+    });
     const providedHmac = Buffer.from(hmac, 'utf-8');
     const generatedHash = Buffer.from(
       crypto
