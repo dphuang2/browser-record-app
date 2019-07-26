@@ -47,11 +47,11 @@
     },
     {
       "src": "/auth",
-      "dest": "/auth/auth.js"
+      "dest": "/api/auth.js"
     },
     {
       "src": "/auth/callback",
-      "dest": "/auth/callback.js"
+      "dest": "/api/callback.js"
     }
   ]
 }

@@ -13,22 +13,16 @@ class MyApp extends App {
     // and a "shop" query parameter. If not, redirect it to the proper
     // authorization URI.
     const shopOrigin = ctx.query.shop;
-    return { shopOrigin, token: parseCookies(ctx).token };
-  }
-
-  componentDidMount() {
-    const { shopOrigin } = this.props;
     const authEndpoint = '/auth';
     const authUri = `${authEndpoint}?shop=${shopOrigin}`;
     if (shopOrigin) {
-      if (!validateToken(this.props.token, shopOrigin)) {
-        Router.push(authUri);
-        // redirect(ctx.res, authUri);
+      if (!validateToken(parseCookies(ctx).token, shopOrigin)) {
+        redirect(ctx.res, authUri);
       }
     } else {
-      Router.push(authEndpoint);
-      // redirect(ctx.res, authEndpoint);
+      redirect(ctx.res, authEndpoint);
     }
+    return { shopOrigin, token: parseCookies(ctx).token };
   }
 
   render() {
