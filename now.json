@@ -3,7 +3,7 @@
   "version": 2,
   "builds": [
     { "src": "./api/*.js", "use": "@now/node" },
-    { "src": "/server/server.js", "use": "@now/node" },
+    { "src": "./auth/*.js", "use": "@now/node" },
     { "src": "package.json", "use": "@now/next" }
   ],
   "env": {
@@ -46,8 +46,12 @@
       "methods": ["POST"]
     },
     {
-      "src": "/auth.*",
-      "dest": "/server/server.js"
+      "src": "/auth",
+      "dest": "/auth/auth.js"
+    },
+    {
+      "src": "/auth/callback",
+      "dest": "/auth/callback.js"
     }
   ]
 }
