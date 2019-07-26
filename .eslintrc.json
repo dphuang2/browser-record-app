@@ -10,8 +10,6 @@
     "Atomics": "readonly",
     "SharedArrayBuffer": "readonly",
     "emit": "readonly",
-    "API_KEY": "readonly",
-    "API_SECRET_KEY": "readonly",
     "React": "readonly"
   },
   "parserOptions": {

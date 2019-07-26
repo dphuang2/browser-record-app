@@ -4,7 +4,7 @@ import { verify } from 'jsonwebtoken';
 export function validateToken(token, shop) {
   let tokenVerified = false;
   try {
-    tokenVerified = verify(token, API_SECRET_KEY).shop === shop;
+    tokenVerified = verify(token, process.env.SHOPIFY_API_SECRET_KEY).shop === shop;
   } catch (error) {
     tokenVerified = false;
   }

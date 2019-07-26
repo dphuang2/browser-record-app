@@ -1,10 +1,9 @@
 import React from 'react';
-import Router from 'next/router';
 import App, { Container } from 'next/app';
 import { AppProvider } from '@shopify/polaris';
 import { parseCookies } from 'nookies';
 import { Provider } from '@shopify/app-bridge-react';
-import { redirect, validateToken } from '../utils/auth';
+import { validateToken, redirect } from '../utils/auth';
 import '@shopify/polaris/styles.css';
 
 class MyApp extends App {
@@ -18,16 +17,20 @@ class MyApp extends App {
     if (shopOrigin) {
       if (!validateToken(parseCookies(ctx).token, shopOrigin)) {
         redirect(ctx.res, authUri);
+        return {};
       }
     } else {
       redirect(ctx.res, authEndpoint);
+      return {};
     }
-    return { shopOrigin, token: parseCookies(ctx).token };
+    return { shopOrigin, token: parseCookies(ctx).token, API_KEY: process.env.SHOPIFY_API_KEY };
   }
 
   render() {
     // pageProps is also a next.js feature
-    const { Component, pageProps, shopOrigin } = this.props;
+    const {
+      Component, pageProps, shopOrigin, API_KEY,
+    } = this.props;
     const config = { apiKey: API_KEY, shopOrigin, forceRedirect: true };
     return (
       <Container>
