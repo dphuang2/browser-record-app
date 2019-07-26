@@ -10,7 +10,7 @@
     "ngrok": "ngrok http 3000"
   },
   "engines": {
-    "node": "8.10.x"
+    "node": "10.16.x"
   },
   "dependencies": {
     "@shopify/app-bridge-react": "^1.6.7",
