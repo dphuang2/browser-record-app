@@ -1,4 +1,5 @@
-import { Schema, model } from 'mongoose';
+import { Schema } from 'mongoose';
+import { avoidOverwriteModelError } from '../../utils/db';
 
 const customerSchema = new Schema({
   browser: String,
@@ -9,6 +10,4 @@ const customerSchema = new Schema({
   shop: String,
 });
 
-const Customer = model('Customer', customerSchema);
-
-export default Customer;
+export default avoidOverwriteModelError('Customer', customerSchema);

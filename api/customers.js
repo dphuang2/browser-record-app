@@ -2,7 +2,7 @@
 import UAParser from 'ua-parser-js';
 import geoip from 'geoip-lite';
 import Customer from './models/Customer';
-import connectToDatabase from './utils/db';
+import connectToDatabase from '../utils/db';
 
 function getRemoteIp(req) {
   return req.headers['x-forwarded-for'] || req.connection.remoteAddress

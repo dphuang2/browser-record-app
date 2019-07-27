@@ -1,6 +1,6 @@
 /* eslint no-console: ["error", { allow: ["error"] }] */
 import Session from './models/Session';
-import connectToDatabase from './utils/db';
+import connectToDatabase from '../utils/db';
 
 // The main, exported, function of the endpoint,
 // dealing with the request and subsequent response

@@ -7,7 +7,7 @@ import { validateToken, redirect } from '../utils/auth';
 import '@shopify/polaris/styles.css';
 
 class MyApp extends App {
-  static getInitialProps({ ctx }) {
+  static async getInitialProps({ ctx }) {
     // Verify that the request has a properly signed token using API_SECRET_KEY
     // and a "shop" query parameter. If not, redirect it to the proper
     // authorization URI.
@@ -15,13 +15,11 @@ class MyApp extends App {
     const authEndpoint = '/auth';
     const authUri = `${authEndpoint}?shop=${shopOrigin}`;
     if (shopOrigin) {
-      if (!validateToken(parseCookies(ctx).token, shopOrigin)) {
+      if (!await validateToken(parseCookies(ctx).token, shopOrigin)) {
         redirect(ctx.res, authUri);
-        return {};
       }
     } else {
       redirect(ctx.res, authEndpoint);
-      return {};
     }
     return { shopOrigin, token: parseCookies(ctx).token, API_KEY: process.env.SHOPIFY_API_KEY };
   }

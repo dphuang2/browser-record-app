@@ -1,4 +1,5 @@
-import mongoose, { Schema, model } from 'mongoose';
+import mongoose, { Schema } from 'mongoose';
+import { avoidOverwriteModelError } from '../../utils/db';
 
 mongoose.set('useCreateIndex', true);
 
@@ -72,6 +73,4 @@ sessionSchema.statics.getSessionById = async function getSessionById(id) {
 
 sessionSchema.index({ timestamp: 1 });
 
-const Session = model('Session', sessionSchema);
-
-export default Session;
+export default avoidOverwriteModelError('Session', sessionSchema);

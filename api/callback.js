@@ -1,9 +1,11 @@
+/* eslint no-console: ["error", { allow: ["error"] }] */
 import Cookies from 'cookies';
 import { sign } from 'jsonwebtoken';
+import axios from 'axios';
 import crypto from 'crypto';
 import querystring from 'querystring';
 
-const { SHOPIFY_API_SECRET_KEY } = process.env;
+const { SHOPIFY_API_KEY, SHOPIFY_API_SECRET_KEY } = process.env;
 
 export default async (req, res) => {
   const {
@@ -46,15 +48,25 @@ export default async (req, res) => {
       return;
     }
 
-    cookies.set('token', sign({ shop }, SHOPIFY_API_SECRET_KEY));
-    res.writeHead(302, {
-      Location: `/?shop=${shop}`,
-    });
-    res.end();
-
-    // TODO
-    // Exchange temporary code for a permanent access token
-    // Use access token to make API call to 'shop' endpoint
+    const accessTokenRequestUrl = `https://${shop}/admin/oauth/access_token`;
+    const accessTokenPayload = {
+      client_id: SHOPIFY_API_KEY,
+      client_secret: SHOPIFY_API_SECRET_KEY,
+      code,
+    };
+    try {
+      const response = await axios.post(accessTokenRequestUrl, accessTokenPayload);
+      const accessToken = response.data.access_token;
+      cookies.set('token', sign({ shop, accessToken }, SHOPIFY_API_SECRET_KEY), {
+        overwite: true,
+      });
+      res.writeHead(302, {
+        Location: `/?shop=${shop}`,
+      });
+      res.end();
+    } catch (error) {
+      res.status(500).send(error);
+    }
   } else {
     res.status(400).send('Required parameters missing');
   }

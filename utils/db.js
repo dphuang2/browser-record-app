@@ -24,4 +24,14 @@ async function connectToDatabase(uri) {
   return db;
 }
 
+export function avoidOverwriteModelError(modelName, schema) {
+  let newOrExistingModel;
+  try {
+    newOrExistingModel = mongoose.model(modelName);
+  } catch (error) {
+    newOrExistingModel = mongoose.model(modelName, schema);
+  }
+  return newOrExistingModel;
+}
+
 export default connectToDatabase;
