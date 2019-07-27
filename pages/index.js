@@ -2,44 +2,53 @@ import {
   Page, ResourceList, Avatar, TextStyle, Card,
 } from '@shopify/polaris';
 import { TitleBar } from '@shopify/app-bridge-react';
+import axios from 'axios';
+import PropTypes from 'prop-types';
 
 class Index extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = {
+      loading: false,
+      customers: [],
+    };
+  }
+
+  async componentDidMount() {
+    this.setState({
+      loading: true,
+    });
+    const { shopOrigin } = this.props;
+    const response = await axios.get(`/api/customers/${shopOrigin}`);
+    this.setState({
+      loading: false,
+      customers: response.data,
+    });
+  }
+
   render() {
+    const { loading, customers } = this.state;
     return (
       <Page fullWidth>
         <TitleBar title="Watch Replays" />
         <Card>
           <ResourceList
+            loading={loading}
             resourceName={{ singular: 'customer', plural: 'customers' }}
-            items={[
-              {
-                id: 341,
-                url: 'customers/341',
-                name: 'Mae Jemison',
-                location: 'Decatur, USA',
-              },
-              {
-                id: 256,
-                url: 'customers/256',
-                name: 'Ellen Ochoa',
-                location: 'Los Angeles, USA',
-              },
-            ]}
+            items={customers}
             renderItem={(item) => {
               const {
-                id, url, name, location,
+                _id, browser, location,
               } = item;
-              const media = <Avatar customer size="medium" name={name} />;
+              const media = <Avatar customer size="medium" name={browser} />;
 
               return (
                 <ResourceList.Item
-                  id={id}
-                  url={url}
+                  id={_id}
                   media={media}
-                  accessibilityLabel={`View details for ${name}`}
                 >
                   <h3>
-                    <TextStyle variation="strong">{name}</TextStyle>
+                    <TextStyle variation="strong">{browser}</TextStyle>
                   </h3>
                   <div>{location}</div>
                 </ResourceList.Item>
@@ -51,5 +60,9 @@ class Index extends React.Component {
     );
   }
 }
+
+Index.propTypes = {
+  shopOrigin: PropTypes.string.isRequired,
+};
 
 export default Index;

@@ -65,7 +65,8 @@ export default async (req, res) => {
       });
       res.end();
     } catch (error) {
-      res.status(500).send(error);
+      console.error(error);
+      res.status(500).send();
     }
   } else {
     res.status(400).send('Required parameters missing');

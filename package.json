@@ -27,6 +27,7 @@
     "next": "^9.0.2",
     "nonce": "^1.0.4",
     "nookies": "^2.0.8",
+    "prop-types": "^15.7.2",
     "querystring": "^0.2.0",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",

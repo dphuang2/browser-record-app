@@ -40,6 +40,11 @@
       "methods": ["POST"]
     },
     {
+      "src": "/api/customers/(.*myshopify.com)$",
+      "dest": "/api/customers.js?shop=$1",
+      "methods": ["GET"]
+    },
+    {
       "src": "/auth",
       "dest": "/api/auth.js"
     },

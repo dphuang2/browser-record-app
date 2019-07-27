@@ -16,21 +16,26 @@ class MyApp extends App {
     const shopOrigin = ctx.query.shop;
     const authEndpoint = '/auth';
     const authUri = `${authEndpoint}?shop=${shopOrigin}`;
+    const { token } = parseCookies(ctx);
     if (shopOrigin) {
-      if (!await validateToken(parseCookies(ctx).token, shopOrigin)) {
+      if (!await validateToken(token, shopOrigin)) {
         redirect(ctx.res, authUri);
       }
     } else {
       redirect(ctx.res, authEndpoint);
     }
-    return { shopOrigin, token: parseCookies(ctx).token, API_KEY: process.env.SHOPIFY_API_KEY };
+    return {
+      shopOrigin,
+      token,
+      apiKey: process.env.SHOPIFY_API_KEY,
+    };
   }
 
   render() {
     const {
-      Component, pageProps, shopOrigin, API_KEY,
+      Component, pageProps, shopOrigin, apiKey,
     } = this.props;
-    const config = { apiKey: API_KEY, shopOrigin, forceRedirect: true };
+    const config = { apiKey, shopOrigin, forceRedirect: true };
     return (
       <Container>
         <Provider config={config}>
