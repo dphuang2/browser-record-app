@@ -15,8 +15,6 @@ function constructLocationString(geo) {
   return 'N/A';
 }
 
-// The main, exported, function of the endpoint,
-// dealing with the request and subsequent response
 export default async (req, res) => {
   try {
     await connectToDatabase(process.env.MONGODB_URI);

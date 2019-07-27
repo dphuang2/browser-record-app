@@ -2,8 +2,6 @@
 import Session from './models/Session';
 import connectToDatabase from '../utils/db';
 
-// The main, exported, function of the endpoint,
-// dealing with the request and subsequent response
 export default async (req, res) => {
   try {
     if (req.method === 'POST') {
@@ -12,7 +10,6 @@ export default async (req, res) => {
         return;
       }
 
-      // Connect database, cached or otherwise
       await connectToDatabase(process.env.MONGODB_URI);
 
       await new Session(req.body).save();

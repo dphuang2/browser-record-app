@@ -9,8 +9,10 @@ import '@shopify/polaris/styles.css';
 class MyApp extends App {
   static async getInitialProps({ ctx }) {
     // Verify that the request has a properly signed token using API_SECRET_KEY
-    // and a "shop" query parameter. If not, redirect it to the proper
-    // authorization URI.
+    // and a "shop" query parameter. We also want to check if the accessToken
+    // in the json web token is still authorized to confirm that the app is
+    // still installed. If either of these conditions are not met, redirect
+    // user to the proper authorization URI.
     const shopOrigin = ctx.query.shop;
     const authEndpoint = '/auth';
     const authUri = `${authEndpoint}?shop=${shopOrigin}`;
@@ -25,7 +27,6 @@ class MyApp extends App {
   }
 
   render() {
-    // pageProps is also a next.js feature
     const {
       Component, pageProps, shopOrigin, API_KEY,
     } = this.props;
