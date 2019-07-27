@@ -40,7 +40,7 @@ class Index extends React.Component {
               const {
                 _id, browser, location,
               } = item;
-              const media = <Avatar customer size="medium" name={browser} />;
+              const media = <Avatar customer size="medium" name={location} />;
 
               return (
                 <ResourceList.Item
@@ -48,9 +48,9 @@ class Index extends React.Component {
                   media={media}
                 >
                   <h3>
-                    <TextStyle variation="strong">{browser}</TextStyle>
+                    <TextStyle variation="strong">{location}</TextStyle>
                   </h3>
-                  <div>{location}</div>
+                  <div>{browser}</div>
                 </ResourceList.Item>
               );
             }}
