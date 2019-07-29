@@ -6,8 +6,10 @@ const customerSchema = new Schema({
   os: String,
   sessionId: String,
   remoteIp: String,
-  location: String,
+  region: String,
+  country: String,
   shop: String,
+  locationAvailable: Boolean,
 });
 
 export default avoidOverwriteModelError('Customer', customerSchema);

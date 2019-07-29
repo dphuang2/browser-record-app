@@ -10,9 +10,16 @@ function getRemoteIp(req) {
     ? req.connection.socket.remoteAddress : null);
 }
 
-function constructLocationString(geo) {
-  if (geo) return `${geo.region}, ${geo.country}`;
-  return 'N/A';
+function getRegionAndCountry(remoteIp) {
+  const location = geoip.lookup(remoteIp);
+  if (location) {
+    return {
+      region: location.region,
+      country: location.country,
+      locationAvailable: true,
+    };
+  }
+  return { region: 'N/A', country: 'N/A', locationAvailable: false };
 }
 
 export default async (req, res) => {
@@ -22,21 +29,19 @@ export default async (req, res) => {
       const agentData = UAParser(req.headers['user-agent']);
       const remoteIp = getRemoteIp(req);
       const body = JSON.parse(req.body);
+      const { region, country, locationAvailable } = getRegionAndCountry(remoteIp);
       const customer = {
         browser: agentData.browser.name,
         os: agentData.os.name,
         shop: body.shop,
         sessionId: body.id,
         remoteIp,
-        location: constructLocationString(geoip.lookup(remoteIp)),
+        region,
+        country,
+        locationAvailable,
       };
-      await Customer.updateOne({ sessionId: customer.sessionId }, customer, { upsert: true });
+      await Customer.replaceOne({ sessionId: customer.sessionId }, customer, { upsert: true });
       res.status(204).send();
-    } else if (req.method === 'GET') {
-      await connectToDatabase(process.env.MONGODB_URI);
-      const { shop } = req.query;
-      const customers = await Customer.find({ shop });
-      res.status(200).json(customers);
     }
   } catch (error) {
     console.error(error);
