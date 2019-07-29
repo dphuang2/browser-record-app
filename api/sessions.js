@@ -3,13 +3,13 @@ import Session from './models/Session';
 import connectToDatabase from '../utils/db';
 
 function countNumClicks(events) {
-  // Count the number of clicks. Look for
+  // Count the number of clicks.
   // The criteria of a click is as follows:
   // type: IncrementalSnapshot (3): https://github.com/rrweb-io/rrweb/blob/master/typings/types.d.ts#L6
   // and
   // source: MouseInteraction (2): https://github.com/rrweb-io/rrweb/blob/master/typings/types.d.ts#L42
   // and
-  // (dataType: TouchStart (7): https://github.com/rrweb-io/rrweb/blob/master/typings/types.d.ts
+  // (dataType: TouchStart (7): https://github.com/rrweb-io/rrweb/blob/master/typings/types.d.ts#L147
   // or
   // dataType: Click (2): https://github.com/rrweb-io/rrweb/blob/master/typings/types.d.ts#L142)
   let numClicks = 0;
