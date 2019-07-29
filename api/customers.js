@@ -4,10 +4,16 @@ import geoip from 'geoip-lite';
 import Customer from './models/Customer';
 import connectToDatabase from '../utils/db';
 
+// https://stackoverflow.com/a/19524949
 function getRemoteIp(req) {
-  return req.headers['x-forwarded-for'] || req.connection.remoteAddress
+  try {
+    return req.headers['x-forwarded-for'] || req.connection.remoteAddress
     || req.socket.remoteAddress || (req.connection.socket
-    ? req.connection.socket.remoteAddress : null);
+      ? req.connection.socket.remoteAddress : null);
+  } catch (error) {
+    console.error(error);
+    return 'N/A';
+  }
 }
 
 function getRegionAndCountry(remoteIp) {
