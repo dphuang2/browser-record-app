@@ -4,8 +4,46 @@ import { sign } from 'jsonwebtoken';
 import axios from 'axios';
 import crypto from 'crypto';
 import querystring from 'querystring';
+import { GraphQLClient } from 'graphql-request';
 
 const { SHOPIFY_API_KEY, SHOPIFY_API_SECRET_KEY } = process.env;
+const SCRIPT_TAG = 'https://cdn.jsdelivr.net/npm/browser-record/dist/br.min.js';
+
+async function installScriptTag(shop, accessToken) {
+  const client = new GraphQLClient(`https://${shop}/admin/api/2019-07/graphql.json`, {
+    headers: {
+      'X-Shopify-Access-Token': accessToken,
+    },
+  });
+
+  // Check if there is already a script tag installed
+  const query = `query {
+    scriptTags (first: 1, src: "${SCRIPT_TAG}") {
+      edges {
+        node {
+          id
+        }
+      }
+    }
+  }`;
+
+  const response = await client.request(query);
+  if (response.scriptTags.edges.length === 0) {
+    // since no script tag was installed, install one.
+    const mutation = `mutation {
+                        scriptTagCreate(input: {
+                          src: "${SCRIPT_TAG}"
+                          displayScope:ALL
+                        }) {
+                          scriptTag {
+                            id
+                          }
+                        }
+                      }`;
+    await client.request(mutation);
+  }
+}
+
 
 export default async (req, res) => {
   const {
@@ -57,6 +95,7 @@ export default async (req, res) => {
     try {
       const response = await axios.post(accessTokenRequestUrl, accessTokenPayload);
       const accessToken = response.data.access_token;
+      await installScriptTag(shop, accessToken);
       cookies.set('token', sign({ shop, accessToken }, SHOPIFY_API_SECRET_KEY), {
         overwite: true,
       });
