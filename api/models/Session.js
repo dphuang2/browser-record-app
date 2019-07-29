@@ -8,50 +8,91 @@ const sessionSchema = new Schema({
   timestamp: Number,
   shop: String,
   id: String,
+  numClicks: Number,
 });
 
-sessionSchema.statics.findOldest = async function findOldest(id) {
-  return this.find({ id });
-};
-
 const aggregateSessionsById = [
-  { // Sort all the documents by timestamp in ascending order
+  { // Make sure events are the proper order for concatenation
     $sort: {
       timestamp: 1,
     },
-  },
-  { // Accumulate events and save important metadata
+  }, { // Group by session id and accumulate fields
     $group: {
       _id: '$id',
       events: {
         $push: '$events',
       },
-      shop: {
-        $first: '$shop',
+      numClicks: {
+        $sum: '$numClicks',
       },
       timestamp: {
         $first: '$timestamp',
       },
     },
-  },
-  { // Combine the arrays and change _id to id
+  }, { // Combine pushed event arrays
     $project: {
       _id: 0,
       id: '$_id',
       timestamp: 1,
-      shop: 1,
+      numClicks: 1,
       events: {
         $reduce: {
           input: '$events',
           initialValue: [],
-          in: { $concatArrays: ['$$value', '$$this'] },
+          in: {
+            $concatArrays: [
+              '$$value', '$$this',
+            ],
+          },
         },
       },
+    },
+  }, { // Calculate session duration
+    $project: {
+      id: 1,
+      timestamp: 1,
+      events: 1,
+      numClicks: 1,
+      duration: {
+        $divide: [
+          {
+            $subtract: [
+              { $arrayElemAt: ['$events.timestamp', -1] },
+              { $arrayElemAt: ['$events.timestamp', 0] },
+            ],
+          }, 1000,
+        ],
+      },
+    },
+  }, { // Combine with customers collection
+    $lookup: {
+      from: 'customers',
+      localField: 'id',
+      foreignField: 'sessionId',
+      as: 'customer',
+    },
+  }, { // Merge lookup document
+    $replaceRoot: {
+      newRoot: {
+        $mergeObjects: [
+          {
+            $arrayElemAt: [
+              '$customer', 0,
+            ],
+          }, '$$ROOT',
+        ],
+      },
+    },
+  }, { // Clean up final object
+    $project: {
+      remoteIp: 0, // redact IP of customer
+      customer: 0,
+      shop: 0, // redundant information
     },
   },
 ];
 
-sessionSchema.statics.getSessionsByShop = async function getSessionsByShop(shop) {
+sessionSchema.statics.getSessionsByShop = async function gsbs(shop) {
   return this.aggregate([
     { // Query for all sessions of a shop
       $match: {
@@ -61,7 +102,7 @@ sessionSchema.statics.getSessionsByShop = async function getSessionsByShop(shop)
   ].concat(aggregateSessionsById));
 };
 
-sessionSchema.statics.getSessionById = async function getSessionById(id) {
+sessionSchema.statics.getSessionById = async function gsbi(id) {
   return this.aggregate([
     { // Query for session id
       $match: {
