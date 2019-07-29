@@ -13,14 +13,14 @@
   },
   "routes": [
     {
-      "src": "/api/sessions",
+      "src": "/api/(sessions|customers)",
       "headers": {
         "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type"
       },
       "continue": true
     },
-    { "src": "/api/sessions",
+    { "src": "/api/(sessions|customers)",
       "status": 200,
       "methods": ["OPTIONS"]
     },
