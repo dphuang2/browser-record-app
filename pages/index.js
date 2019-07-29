@@ -19,7 +19,7 @@ class Index extends React.Component {
       loading: true,
     });
     const { shopOrigin } = this.props;
-    const response = await axios.get(`/api/customers/${shopOrigin}`);
+    const response = await axios.get(`/api/sessions/shop/${shopOrigin}`);
     this.setState({
       loading: false,
       customers: response.data,
@@ -38,17 +38,19 @@ class Index extends React.Component {
             items={customers}
             renderItem={(item) => {
               const {
-                _id, browser, location,
+                browser, region, country, locationAvailable, sessionId,
               } = item;
-              const media = <Avatar customer size="medium" name={location} />;
+              let locationString = 'Location Not Available';
+              if (locationAvailable) locationString = `${region}, ${country}`;
+              const media = <Avatar customer size="medium" name={locationString} />;
 
               return (
                 <ResourceList.Item
-                  id={_id}
+                  id={sessionId}
                   media={media}
                 >
                   <h3>
-                    <TextStyle variation="strong">{location}</TextStyle>
+                    <TextStyle variation="strong">{locationString}</TextStyle>
                   </h3>
                   <div>{browser}</div>
                 </ResourceList.Item>

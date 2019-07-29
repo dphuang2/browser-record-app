@@ -2,8 +2,8 @@
   "name": "browser-record-app",
   "version": 2,
   "builds": [
-    { "src": "/api/*.js", "use": "@now/node" },
-    { "src": "package.json", "use": "@now/next" }
+    { "src": "/api/*.js", "use": "@now/node@canary" },
+    { "src": "package.json", "use": "@now/next@canary" }
   ],
   "env": {
     "MONGODB_URI": "@mongodb-uri",
@@ -25,8 +25,13 @@
       "methods": ["OPTIONS"]
     },
     {
-      "src": "/api/sessions/([0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{12})$",
+      "src": "/api/sessions/id/([0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{12})$",
       "dest": "/api/sessions.js?id=$1",
+      "methods": ["GET"]
+    },
+    {
+      "src": "/api/sessions/shop/(.*myshopify.com)$",
+      "dest": "/api/sessions.js?shop=$1",
       "methods": ["GET"]
     },
     {
@@ -38,11 +43,6 @@
       "src": "/api/customers",
       "dest": "/api/customers.js",
       "methods": ["POST"]
-    },
-    {
-      "src": "/api/customers/(.*myshopify.com)$",
-      "dest": "/api/customers.js?shop=$1",
-      "methods": ["GET"]
     },
     {
       "src": "/auth",
