@@ -8,11 +8,13 @@ import '@shopify/polaris/styles.css';
 
 class MyApp extends App {
   static async getInitialProps({ ctx }) {
-    // Verify that the request has a properly signed token using API_SECRET_KEY
-    // and a "shop" query parameter. We also want to check if the accessToken
-    // in the json web token is still authorized to confirm that the app is
-    // still installed. If either of these conditions are not met, redirect
-    // user to the proper authorization URI.
+    // First check if the shop query parameter is set, redirect if not. Then we
+    // verify that the request has a properly signed token using
+    // API_SECRET_KEY. We want to check if the accessToken in the json web
+    // token is still authorized to confirm that the app is still installed and
+    // if the shop parameter matches the on claimed in the query string of the
+    // URI. If any of these conditions are not met, redirect user to the proper
+    // authorization URI.
     const shopOrigin = ctx.query.shop;
     const authEndpoint = '/auth';
     const authUri = `${authEndpoint}?shop=${shopOrigin}`;
