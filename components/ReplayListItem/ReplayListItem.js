@@ -1,5 +1,5 @@
 import {
-  ResourceList, Avatar, Button,
+  ResourceList, Avatar,
 } from '@shopify/polaris';
 import PropTypes from 'prop-types';
 import './ReplayListItem.css';
@@ -109,6 +109,7 @@ ReplayListItem.propTypes = {
   timestamp: PropTypes.number.isRequired,
   duration: PropTypes.number.isRequired,
   numClicks: PropTypes.number.isRequired,
+  handleItemClick: PropTypes.func.isRequired,
 };
 
 export default ReplayListItem;

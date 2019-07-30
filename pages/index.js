@@ -1,17 +1,36 @@
 import {
-  ResourceList, Page, Card,
+  ResourceList,
+  Page,
+  Card,
 } from '@shopify/polaris';
 import axios from 'axios';
 import PropTypes from 'prop-types';
 import ReplayListItem from '../components/ReplayListItem';
+import Modal from '../components/Modal';
 
-function createSortCompare(key, direction) {
+function createSortCompare(lambdaA, lambdaB, direction) {
   return function compare(a, b) {
-    if (a[key] < b[key]) return -1 * direction;
-    if (a[key] > b[key]) return 1 * direction;
+    if (lambdaA(a) < lambdaB(b)) return -1 * direction;
+    if (lambdaA(a) > lambdaB(b)) return 1 * direction;
     return 0;
   };
 }
+
+const getTimestamp = x => x.timestamp;
+const getDuration = x => x.duration;
+const getNumClicks = x => x.numClicks;
+const getCountry = x => x.country;
+const getClicksPerSecond = x => x.numClicks / x.duration;
+
+const timestampDesc = createSortCompare(getTimestamp, getTimestamp, -1);
+const timestampAsc = createSortCompare(getTimestamp, getTimestamp, 1);
+const numClicksDesc = createSortCompare(getNumClicks, getNumClicks, -1);
+const numClicksAsc = createSortCompare(getNumClicks, getNumClicks, 1);
+const durationDesc = createSortCompare(getDuration, getDuration, -1);
+const durationAsc = createSortCompare(getDuration, getDuration, 1);
+const countrySort = createSortCompare(getCountry, getCountry, -1);
+const clicksPerSecondDesc = createSortCompare(getClicksPerSecond, getClicksPerSecond, -1);
+const clicksPerSecondAsc = createSortCompare(getClicksPerSecond, getClicksPerSecond, 1);
 
 class Index extends React.Component {
   constructor(props) {
@@ -20,9 +39,11 @@ class Index extends React.Component {
       loading: false,
       replays: [],
       sortValue: 'TIMESTAMP_DESC',
+      showModal: false,
     };
     this.handleSortChange = this.handleSortChange.bind(this);
     this.handleItemClick = this.handleItemClick.bind(this);
+    this.hideModal = this.hideModal.bind(this);
   }
 
   async componentDidMount() {
@@ -31,10 +52,18 @@ class Index extends React.Component {
     });
     const { shopOrigin } = this.props;
     const response = await axios.get(`/api/sessions/shop/${shopOrigin}`);
+    const replays = response.data;
+    const replayMap = {};
+    for (let i = 0; i < replays.length; i += 1) { replayMap[replays[i].id] = replays[i]; }
     this.setState({
       loading: false,
-      replays: response.data,
+      replays,
+      replayMap,
     });
+  }
+
+  hideModal() {
+    this.setState({ showModal: false });
   }
 
   handleSortChange(sortValue) {
@@ -42,25 +71,34 @@ class Index extends React.Component {
       let replays;
       switch (sortValue) {
         case 'TIMESTAMP_DESC':
-          replays = state.replays.sort(createSortCompare('timestamp', -1));
+          replays = state.replays.sort(timestampDesc);
           break;
         case 'TIMESTAMP_ASC':
-          replays = state.replays.sort(createSortCompare('timestamp', 1));
+          replays = state.replays.sort(timestampAsc);
           break;
         case 'CLICKS_DESC':
-          replays = state.replays.sort(createSortCompare('numClicks', -1));
+          replays = state.replays.sort(numClicksDesc);
           break;
         case 'CLICKS_ASC':
-          replays = state.replays.sort(createSortCompare('numClicks', 1));
+          replays = state.replays.sort(numClicksAsc);
           break;
         case 'DURATION_DESC':
-          replays = state.replays.sort(createSortCompare('duration', -1));
+          replays = state.replays.sort(durationDesc);
           break;
         case 'DURATION_ASC':
-          replays = state.replays.sort(createSortCompare('duration', 1));
+          replays = state.replays.sort(durationAsc);
+          break;
+        case 'COUNTRY':
+          replays = state.replays.sort(countrySort);
+          break;
+        case 'CLICKS_PER_SECOND_DESC':
+          replays = state.replays.sort(clicksPerSecondDesc);
+          break;
+        case 'CLICKS_PER_SECOND_ASC':
+          replays = state.replays.sort(clicksPerSecondAsc);
           break;
         default:
-          replays = state.replays.sort(createSortCompare('timestamp', 1));
+          replays = state.replays.sort(timestampDesc);
           break;
       }
       return {
@@ -71,13 +109,20 @@ class Index extends React.Component {
   }
 
   handleItemClick(id) {
-    console.log(id);
+    const { replayMap } = this.state;
+    const replay = replayMap[id];
+    console.log(replay);
   }
 
   render() {
-    const { loading, replays, sortValue } = this.state;
+    const {
+      loading, replays, sortValue, showModal,
+    } = this.state;
     return (
       <Page fullWidth>
+        <Modal show={showModal} handleClose={this.hideModal}>
+          <p> test </p>
+        </Modal>
         <Card>
           <ResourceList
             loading={loading}
@@ -91,6 +136,9 @@ class Index extends React.Component {
               { label: 'Least clicks', value: 'CLICKS_ASC' },
               { label: 'Longest duration', value: 'DURATION_DESC' },
               { label: 'Shortest duration', value: 'DURATION_ASC' },
+              { label: 'Most clicks per second', value: 'CLICKS_PER_SECOND_DESC' },
+              { label: 'Least click per second', value: 'CLICKS_PER_SECOND_ASC' },
+              { label: 'Country', value: 'COUNTRY' },
             ]}
             items={replays}
             showHeader
