@@ -89,6 +89,10 @@ const aggregateSessionsById = [
       customer: 0,
       shop: 0, // redundant information
     },
+  }, { // Sort by newest session first
+    $sort: {
+      timestamp: -1,
+    },
   },
 ];
 

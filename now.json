@@ -3,7 +3,8 @@
   "version": 2,
   "builds": [
     { "src": "/api/*.js", "use": "@now/node@canary" },
-    { "src": "package.json", "use": "@now/next@canary" }
+    { "src": "package.json", "use": "@now/next@canary" },
+    { "src": "/assets/flags/*.svg", "use": "@now/static" }
   ],
   "env": {
     "MONGODB_URI": "@mongodb-uri",
