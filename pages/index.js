@@ -1,12 +1,23 @@
 import {
   ResourceList,
-  Page,
-  Card,
+  Page, Card,
 } from '@shopify/polaris';
 import axios from 'axios';
 import PropTypes from 'prop-types';
 import ReplayListItem from '../components/ReplayListItem';
-import Modal from '../components/Modal';
+import Player from '../components/Player';
+
+const sortOptions = [
+  { label: 'Newest session', value: 'TIMESTAMP_DESC' },
+  { label: 'Oldest session', value: 'TIMESTAMP_ASC' },
+  { label: 'Most clicks', value: 'CLICKS_DESC' },
+  { label: 'Least clicks', value: 'CLICKS_ASC' },
+  { label: 'Longest duration', value: 'DURATION_DESC' },
+  { label: 'Shortest duration', value: 'DURATION_ASC' },
+  { label: 'Most clicks per second', value: 'CLICKS_PER_SECOND_DESC' },
+  { label: 'Least click per second', value: 'CLICKS_PER_SECOND_ASC' },
+  { label: 'Country', value: 'COUNTRY' },
+];
 
 function createSortCompare(lambdaA, lambdaB, direction) {
   return function compare(a, b) {
@@ -37,13 +48,14 @@ class Index extends React.Component {
     super(props);
     this.state = {
       loading: false,
+      currentReplay: {},
       replays: [],
       sortValue: 'TIMESTAMP_DESC',
-      showModal: false,
+      showPlayer: false,
     };
     this.handleSortChange = this.handleSortChange.bind(this);
     this.handleItemClick = this.handleItemClick.bind(this);
-    this.hideModal = this.hideModal.bind(this);
+    this.handleOutsideClick = this.handleOutsideClick.bind(this);
   }
 
   async componentDidMount() {
@@ -60,10 +72,6 @@ class Index extends React.Component {
       replays,
       replayMap,
     });
-  }
-
-  hideModal() {
-    this.setState({ showModal: false });
   }
 
   handleSortChange(sortValue) {
@@ -108,40 +116,45 @@ class Index extends React.Component {
     });
   }
 
+  handleOutsideClick() {
+    this.setState({
+      showPlayer: false,
+    });
+  }
+
   handleItemClick(id) {
-    const { replayMap } = this.state;
-    const replay = replayMap[id];
-    console.log(replay);
+    this.setState((state) => {
+      const { replayMap } = state;
+      const currentReplay = replayMap[id];
+      return {
+        currentReplay,
+        showPlayer: true,
+      };
+    });
   }
 
   render() {
     const {
-      loading, replays, sortValue, showModal,
+      loading, replays, sortValue, showPlayer, currentReplay,
     } = this.state;
     return (
       <Page fullWidth>
-        <Modal show={showModal} handleClose={this.hideModal}>
-          <p> test </p>
-        </Modal>
+        {showPlayer && (
+        <Player
+          replay={currentReplay}
+          handleOutsideClick={this.handleOutsideClick}
+        />
+        )}
         <Card>
           <ResourceList
             loading={loading}
             resourceName={{ singular: 'replay', plural: 'replays' }}
             sortValue={sortValue}
             onSortChange={this.handleSortChange}
-            sortOptions={[
-              { label: 'Newest session', value: 'TIMESTAMP_DESC' },
-              { label: 'Oldest session', value: 'TIMESTAMP_ASC' },
-              { label: 'Most clicks', value: 'CLICKS_DESC' },
-              { label: 'Least clicks', value: 'CLICKS_ASC' },
-              { label: 'Longest duration', value: 'DURATION_DESC' },
-              { label: 'Shortest duration', value: 'DURATION_ASC' },
-              { label: 'Most clicks per second', value: 'CLICKS_PER_SECOND_DESC' },
-              { label: 'Least click per second', value: 'CLICKS_PER_SECOND_ASC' },
-              { label: 'Country', value: 'COUNTRY' },
-            ]}
+            sortOptions={sortOptions}
             items={replays}
             showHeader
+
             renderItem={item => <ReplayListItem handleItemClick={this.handleItemClick} {...item} />}
           />
         </Card>

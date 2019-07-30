@@ -32,6 +32,7 @@
     "querystring": "^0.2.0",
     "react": "^16.8.6",
     "react-dom": "^16.8.6",
+    "rrweb": "^0.7.18",
     "ua-parser-js": "^0.7.20",
     "webpack": "^4.37.0",
     "webpackbar": "^3.2.0"

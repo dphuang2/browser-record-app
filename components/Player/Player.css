@@ -1,4 +1,4 @@
-.modal {
+.player-container {
   position: fixed;
   top: 0;
   left: 0;
@@ -6,9 +6,10 @@
   height: 100%;
   background: rgba(0, 0, 0, 0.6);
   z-index: 999999;
+  display: block;
 }
 
-.modal-main {
+.player-wrapper {
   position:fixed;
   background: white;
   width: 90%;
@@ -18,10 +19,5 @@
   transform: translate(-50%,-50%);
 }
 
-.display-block {
-  display: block;
-}
-
-.display-none {
-  display: none;
+#player {
 }
