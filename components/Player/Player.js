@@ -99,6 +99,10 @@ const Player = ({ replay, handleOutsideClick }) => {
           top: 50%;
         }
 
+      `}
+      </style>
+      <style jsx global>
+        {`
         iframe {
           border: none;
           pointer-events: none;
