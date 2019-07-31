@@ -50,11 +50,11 @@ const ReplayListItem = function mrl(props) {
 
   // Parse time
   let locationString = 'Location Not Available';
-  let media = <Avatar customer size="small" name={locationString} source={`/assets/flags/${country.toLowerCase()}.svg`} />;
+  let media = <Avatar customer size="medium" name={locationString} source={`/assets/flags/${country.toLowerCase()}.svg`} />;
   if (locationAvailable) {
     locationString = `${region}, ${country}`;
   } else {
-    media = <Avatar customer size="small" name={locationString} />;
+    media = <Avatar customer size="medium" name={locationString} />;
   }
 
   // Generate date string
@@ -77,17 +77,21 @@ const ReplayListItem = function mrl(props) {
       onClick={handleItemClick}
     >
       <div className="ReplayListItem">
-        <div className="ReplayListItem__Title">{locationString}</div>
+        <div className="ReplayListItem__Hero">
+          <div className="ReplayListItem__Title">
+            {locationString}
+          </div>
+          <div className="ReplayListItem__Timestamp">
+            {dateString}
+          </div>
+          <div className="ReplayListItem__Duration">
+            {durationString}
+          </div>
+        </div>
         <div className="ReplayListItem__UserAgent">
           {browser}
           {' on '}
           {os}
-        </div>
-        <div className="ReplayListItem__Timestamp">
-          {dateString}
-        </div>
-        <div className="ReplayListItem__Duration">
-          {durationString}
         </div>
         <div className="ReplayListItem__Clicks">
           {numClicks}
@@ -101,28 +105,29 @@ const ReplayListItem = function mrl(props) {
   display: grid;
   grid-template-columns: 1fr;
   grid-template-areas:
-  "title"
+  "hero"
   "useragent"
-  "timestamp"
-  "duration"
   "clicks";
+}
+
+.ReplayListItem__Hero {
+  grid-area: hero;
 }
 
 .ReplayListItem__Title {
   font-weight: 600;
-  grid-area: title;
+  display: inline;
+  margin-right: 5px;
+}
+
+.ReplayListItem__Timestamp {
+  color: #505050;
+  font-style: italic;
+  display: inline;
 }
 
 .ReplayListItem__UserAgent {
   grid-area: useragent;
-}
-
-.ReplayListItem__Timestamp {
-  grid-area: timestamp;
-}
-
-.ReplayListItem__Duration {
-  grid-area: duration;
 }
 
 .ReplayListItem__Clicks {
@@ -131,24 +136,19 @@ const ReplayListItem = function mrl(props) {
 
 @media(min-width: 800px) {
   .ReplayListItem {
-    grid-template-columns: repeat(6, 1fr);
-    grid-template-areas: "title useragent . clicks duration timestamp";
+    grid-template-columns: repeat(4, 1fr);
+    grid-template-areas: "hero . useragent clicks";
   }
 
-  .ReplayListItem__Timestamp {
+  .ReplayListItem__UserAgent {
     text-align: right;
   }
 
   .ReplayListItem__Clicks {
     text-align: right;
   }
-
-  .ReplayListItem__Duration {
-    text-align: right;
-  }
-
 }
-      `}
+        `}
       </style>
     </ResourceList.Item>
   );

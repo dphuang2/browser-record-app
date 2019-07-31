@@ -1,6 +1,7 @@
 import {
   ResourceList,
-  Page, Card,
+  Page,
+  Card,
 } from '@shopify/polaris';
 import axios from 'axios';
 import PropTypes from 'prop-types';
