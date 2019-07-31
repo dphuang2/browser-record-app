@@ -10,7 +10,7 @@
 }
 
 .player-wrapper {
-  position:fixed;
+  position: absolute;
   background: white;
   width: 90%;
   height: 90%;
@@ -19,5 +19,9 @@
   transform: translate(-50%,-50%);
 }
 
-#player {
+#player-display {
+  position: absolute;
+  transform-origin: 0 0;
+  left: 50%;
+  top: 50%;
 }

@@ -11,7 +11,8 @@
     "SharedArrayBuffer": "readonly",
     "emit": "readonly",
     "React": "readonly",
-    "document": "writable"
+    "document": "writable",
+    "window": "writable"
   },
   "parserOptions": {
     "ecmaVersion": 2018,

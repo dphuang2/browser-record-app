@@ -30,6 +30,7 @@ function durationStringFromSeconds(seconds) {
       if (numTimes === 2) break;
     }
   }
+  if (numTimes === 0) return '1 second';
   if (numTimes === 1) return timesToUse[0];
   return `${timesToUse[0]} ${timesToUse[1]}`;
 }

@@ -48,10 +48,9 @@ class Index extends React.Component {
     super(props);
     this.state = {
       loading: false,
-      currentReplay: {},
+      currentReplay: undefined,
       replays: [],
       sortValue: 'TIMESTAMP_DESC',
-      showPlayer: false,
     };
     this.handleSortChange = this.handleSortChange.bind(this);
     this.handleItemClick = this.handleItemClick.bind(this);
@@ -118,7 +117,7 @@ class Index extends React.Component {
 
   handleOutsideClick() {
     this.setState({
-      showPlayer: false,
+      currentReplay: undefined,
     });
   }
 
@@ -128,18 +127,17 @@ class Index extends React.Component {
       const currentReplay = replayMap[id];
       return {
         currentReplay,
-        showPlayer: true,
       };
     });
   }
 
   render() {
     const {
-      loading, replays, sortValue, showPlayer, currentReplay,
+      loading, replays, sortValue, currentReplay,
     } = this.state;
     return (
       <Page fullWidth>
-        {showPlayer && (
+        {currentReplay && (
         <Player
           replay={currentReplay}
           handleOutsideClick={this.handleOutsideClick}
@@ -154,7 +152,6 @@ class Index extends React.Component {
             sortOptions={sortOptions}
             items={replays}
             showHeader
-
             renderItem={item => <ReplayListItem handleItemClick={this.handleItemClick} {...item} />}
           />
         </Card>
