@@ -2,7 +2,6 @@ import { useEffect, useState, useRef } from 'react';
 import PropTypes from 'prop-types';
 import { Replayer } from 'rrweb';
 import 'rrweb/dist/rrweb.min.css';
-import './Player.css';
 
 const Player = ({ replay, handleOutsideClick }) => {
   const wrapperRef = useRef();
@@ -22,9 +21,9 @@ const Player = ({ replay, handleOutsideClick }) => {
   };
 
   const handleClick = (event) => {
-    if (wrapperRef
-      && wrapperRef.current
-      && wrapperRef.current.contains(event.target)) {
+    if (playerRef
+      && playerRef.current
+      && playerRef.current.contains(event.target)) {
       return;
     }
     handleOutsideClick();
@@ -35,7 +34,6 @@ const Player = ({ replay, handleOutsideClick }) => {
       root: playerRef.current,
     });
     replayer.play();
-    replayer.on('start', () => { console.log('test'); });
     replayer.on('resize', (event) => {
       setContentWidth(event.width);
       setContentHeight(event.height);
@@ -43,14 +41,17 @@ const Player = ({ replay, handleOutsideClick }) => {
     });
     window.addEventListener('resize', setAvailableDimensions);
     document.addEventListener('mousedown', handleClick);
+    document.addEventListener('touchstart', handleClick);
     return () => {
       window.removeEventListener('resize', setAvailableDimensions);
       document.removeEventListener('mousedown', handleClick);
+      document.removeEventListener('touchstart', handleClick);
     };
   }, []);
 
   useEffect(() => {
-    // Account for browser precision for transform CSS property
+    // Account for browser precision for transform CSS property by decreasing
+    // available width and height
     setScale(Math.min(
       (availableWidth - 8) / contentWidth,
       (availableHeight - 8) / contentHeight,
@@ -68,6 +69,42 @@ const Player = ({ replay, handleOutsideClick }) => {
           ref={playerRef}
         />
       </div>
+      <style jsx>
+        {`
+        .player-container {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width:100%;
+          height: 100%;
+          background: rgba(0, 0, 0, 0.6);
+          z-index: 999999;
+          display: block;
+        }
+
+          .player-wrapper {
+            position: absolute;
+            width: 90%;
+            height: 90%;
+            top:50%;
+            left:50%;
+            transform: translate(-50%,-50%);
+          }
+
+        #player-display {
+          background: white;
+          position: absolute;
+          transform-origin: 0 0;
+          left: 50%;
+          top: 50%;
+        }
+
+        iframe {
+          border: none;
+          pointer-events: none;
+        }
+      `}
+      </style>
     </div>
   );
 };

@@ -2,7 +2,6 @@ import {
   ResourceList, Avatar,
 } from '@shopify/polaris';
 import PropTypes from 'prop-types';
-import './ReplayListItem.css';
 
 function durationStringFromSeconds(seconds) {
   let days = Math.floor(seconds / 86400);
@@ -96,6 +95,61 @@ const ReplayListItem = function mrl(props) {
           {numClicks === 1 ? 'click' : 'clicks'}
         </div>
       </div>
+      <style jsx>
+        {`
+.ReplayListItem {
+  display: grid;
+  grid-template-columns: 1fr;
+  grid-template-areas:
+  "title"
+  "useragent"
+  "timestamp"
+  "duration"
+  "clicks";
+}
+
+.ReplayListItem__Title {
+  font-weight: 600;
+  grid-area: title;
+}
+
+.ReplayListItem__UserAgent {
+  grid-area: useragent;
+}
+
+.ReplayListItem__Timestamp {
+  grid-area: timestamp;
+}
+
+.ReplayListItem__Duration {
+  grid-area: duration;
+}
+
+.ReplayListItem__Clicks {
+  grid-area: clicks;
+}
+
+@media(min-width: 800px) {
+  .ReplayListItem {
+    grid-template-columns: repeat(6, 1fr);
+    grid-template-areas: "title useragent . clicks duration timestamp";
+  }
+
+  .ReplayListItem__Timestamp {
+    text-align: right;
+  }
+
+  .ReplayListItem__Clicks {
+    text-align: right;
+  }
+
+  .ReplayListItem__Duration {
+    text-align: right;
+  }
+
+}
+      `}
+      </style>
     </ResourceList.Item>
   );
 };
