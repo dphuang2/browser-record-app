@@ -27,13 +27,11 @@ function createSortCompare(lambdaA, lambdaB, direction) {
     return 0;
   };
 }
-
 const getTimestamp = x => x.timestamp;
 const getDuration = x => x.duration;
 const getNumClicks = x => x.numClicks;
 const getCountry = x => x.country;
 const getClicksPerSecond = x => x.numClicks / x.duration;
-
 const timestampDesc = createSortCompare(getTimestamp, getTimestamp, -1);
 const timestampAsc = createSortCompare(getTimestamp, getTimestamp, 1);
 const numClicksDesc = createSortCompare(getNumClicks, getNumClicks, -1);

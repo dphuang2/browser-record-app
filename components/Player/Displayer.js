@@ -1,16 +1,25 @@
 import {
-  forwardRef, useEffect, useState, useRef,
+  useEffect,
+  useState,
+  useRef,
 } from 'react';
 import PropTypes from 'prop-types';
 import { Replayer } from 'rrweb';
 
-const Displayer = forwardRef(({ replay }, ref) => {
+const Displayer = ({
+  percentageWatched,
+  setPercentageWatched,
+  replay,
+  displayerRef 
+}) => {
   const wrapperRef = useRef();
   const [scale, setScale] = useState();
   const [availableWidth, setAvailableWidth] = useState();
   const [availableHeight, setAvailableHeight] = useState();
   const [contentWidth, setContentWidth] = useState();
   const [contentHeight, setContentHeight] = useState();
+  const [replayer, setReplayer] = useState();
+  const [animationFrameGlobalId, setAnimationFrameGlobalId] = useState();
 
   const setAvailableDimensions = () => {
     if (!wrapperRef || !wrapperRef.current) return;
@@ -19,9 +28,19 @@ const Displayer = forwardRef(({ replay }, ref) => {
     setAvailableHeight(height);
   };
 
+  const updatePercentageWatched = () => {
+    if (replayer) {
+      console.log('timeoffset: ', replayer.getTimeOffset);
+      console.log('totalTime: ', replay.duration);
+      setPercentageWatched(replayer.getTimeOffset() / replay.duration);
+    }
+    const globalId = window.requestAnimationFrame(updatePercentageWatched)
+    setAnimationFrameGlobalId(globalId);
+  }
+  
   useEffect(() => {
     const replayer = new Replayer(replay.events, {
-      root: ref.current,
+      root: displayerRef.current,
     });
     replayer.play();
     replayer.on('resize', (event) => {
@@ -29,7 +48,14 @@ const Displayer = forwardRef(({ replay }, ref) => {
       setContentHeight(event.height);
       setAvailableDimensions();
     });
+    setReplayer(replayer);
+    const globalId = window.requestAnimationFrame(updatePercentageWatched)
+    setAnimationFrameGlobalId(globalId);
     window.addEventListener('resize', setAvailableDimensions);
+    return () => {
+      window.removeEventListener('resize', setAvailableDimensions);
+      window.cancelAnimationFrame(animationFrameGlobalId);
+    };
   }, []);
 
   useEffect(() => {
@@ -42,20 +68,19 @@ const Displayer = forwardRef(({ replay }, ref) => {
     ));
   }, [availableWidth, availableHeight, contentWidth, contentHeight]);
 
-
   return (
     <div ref={wrapperRef} className="wrapper">
       <div
         className="display"
-        ref={ref}
+        ref={displayerRef}
       />
       <style jsx>
         {`
 .wrapper {
   position: absolute;
   width: 90%;
-  height: 100%;
-  top:50%;
+  height: 90%;
+  top:45%;
   left:50%;
   transform: translate(-50%,-50%);
 }
@@ -79,10 +104,9 @@ iframe {
       </style>
     </div>
   );
-});
+};
 
 Displayer.propTypes = {
-  ref: PropTypes.elementType.isRequired,
   replay: PropTypes.shape({
     events: PropTypes.arrayOf(PropTypes.object).isRequired,
   }).isRequired,

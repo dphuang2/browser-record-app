@@ -1,5 +1,5 @@
 import {
-  useRef, useEffect,
+  useRef, useEffect, useState,
 } from 'react';
 
 import PropTypes from 'prop-types';
@@ -10,6 +10,7 @@ import 'rrweb/dist/rrweb.min.css';
 const Player = ({ replay, handleOutsideClick }) => {
   const displayerRef = useRef();
   const controllerRef = useRef();
+  const [percentageWatched, setPercentageWatched] = useState(0);
 
   const handleClick = (event) => {
     if (
@@ -34,8 +35,16 @@ const Player = ({ replay, handleOutsideClick }) => {
 
   return (
     <div className="player-container">
-      <Displayer ref={displayerRef} replay={replay} handleOutsideClick={handleOutsideClick} />
-      <Controller ref={controllerRef} handleOutsideClick={handleOutsideClick} />
+      <Displayer
+        percentageWatched={percentageWatched}
+        setPercentageWatched={setPercentageWatched}
+        displayerRef={displayerRef}
+        replay={replay}
+      />
+      <Controller
+        setPercentageWatched={setPercentageWatched}
+        controllerRef={controllerRef}
+      />
       <style jsx>
         {`
         .player-container {
