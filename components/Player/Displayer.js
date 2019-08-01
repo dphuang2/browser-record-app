@@ -18,8 +18,8 @@ const Displayer = ({
   const [availableHeight, setAvailableHeight] = useState();
   const [contentWidth, setContentWidth] = useState();
   const [contentHeight, setContentHeight] = useState();
-  const [replayer, setReplayer] = useState();
-  const [animationFrameGlobalId, setAnimationFrameGlobalId] = useState();
+  const replayer = useRef();
+  const animationFrameGlobalId = useRef();
 
   const setAvailableDimensions = () => {
     if (!wrapperRef || !wrapperRef.current) return;
@@ -29,32 +29,32 @@ const Displayer = ({
   };
 
   const updatePercentageWatched = () => {
-    if (replayer) {
-      console.log('timeoffset: ', replayer.getTimeOffset);
-      console.log('totalTime: ', replay.duration);
-      setPercentageWatched(replayer.getTimeOffset() / replay.duration);
+    if (replayer.current) {
+      const currentTime = replayer.current.timer.timeOffset + replayer.current.getTimeOffset();
+      const totalTime = replay.duration * 1000
+      setPercentageWatched(currentTime / totalTime);
+      if (currentTime < totalTime)
+        animationFrameGlobalId.current = window.requestAnimationFrame(updatePercentageWatched)
+    } else {
+      animationFrameGlobalId.current = window.requestAnimationFrame(updatePercentageWatched)
     }
-    const globalId = window.requestAnimationFrame(updatePercentageWatched)
-    setAnimationFrameGlobalId(globalId);
   }
   
   useEffect(() => {
-    const replayer = new Replayer(replay.events, {
+    replayer.current = new Replayer(replay.events, {
       root: displayerRef.current,
     });
-    replayer.play();
-    replayer.on('resize', (event) => {
+    replayer.current.play();
+    replayer.current.on('resize', (event) => {
       setContentWidth(event.width);
       setContentHeight(event.height);
       setAvailableDimensions();
     });
-    setReplayer(replayer);
-    const globalId = window.requestAnimationFrame(updatePercentageWatched)
-    setAnimationFrameGlobalId(globalId);
+    animationFrameGlobalId.current = window.requestAnimationFrame(updatePercentageWatched)
     window.addEventListener('resize', setAvailableDimensions);
     return () => {
       window.removeEventListener('resize', setAvailableDimensions);
-      window.cancelAnimationFrame(animationFrameGlobalId);
+      window.cancelAnimationFrame(animationFrameGlobalId.current);
     };
   }, []);
 
@@ -66,6 +66,7 @@ const Displayer = ({
       (availableWidth - 7) / contentWidth,
       (availableHeight - 7) / contentHeight,
     ));
+    console.log('displayer: ', percentageWatched);
   }, [availableWidth, availableHeight, contentWidth, contentHeight]);
 
   return (
@@ -79,8 +80,8 @@ const Displayer = ({
 .wrapper {
   position: absolute;
   width: 90%;
-  height: 90%;
-  top:45%;
+  height: 95%;
+  top: 47.5%;
   left:50%;
   transform: translate(-50%,-50%);
 }
@@ -109,6 +110,7 @@ iframe {
 Displayer.propTypes = {
   replay: PropTypes.shape({
     events: PropTypes.arrayOf(PropTypes.object).isRequired,
+    duration: PropTypes.number.isRequired,
   }).isRequired,
 };
 

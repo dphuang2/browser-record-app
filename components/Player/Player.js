@@ -42,7 +42,7 @@ const Player = ({ replay, handleOutsideClick }) => {
         replay={replay}
       />
       <Controller
-        setPercentageWatched={setPercentageWatched}
+        percentageWatched={percentageWatched}
         controllerRef={controllerRef}
       />
       <style jsx>
