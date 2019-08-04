@@ -7,7 +7,6 @@ import PropTypes from 'prop-types';
 import { Replayer } from 'rrweb';
 
 const Displayer = ({
-  percentageWatched,
   setPercentageWatched,
   replay,
   displayerRef 
@@ -21,26 +20,26 @@ const Displayer = ({
   const replayer = useRef();
   const animationFrameGlobalId = useRef();
 
-  const setAvailableDimensions = () => {
-    if (!wrapperRef || !wrapperRef.current) return;
-    const { width, height } = wrapperRef.current.getBoundingClientRect();
-    setAvailableWidth(width);
-    setAvailableHeight(height);
-  };
-
-  const updatePercentageWatched = () => {
-    if (replayer.current) {
-      const currentTime = replayer.current.timer.timeOffset + replayer.current.getTimeOffset();
-      const totalTime = replay.duration * 1000
-      setPercentageWatched(currentTime / totalTime);
-      if (currentTime < totalTime)
-        animationFrameGlobalId.current = window.requestAnimationFrame(updatePercentageWatched)
-    } else {
-      animationFrameGlobalId.current = window.requestAnimationFrame(updatePercentageWatched)
-    }
-  }
-  
   useEffect(() => {
+    const setAvailableDimensions = () => {
+      if (!wrapperRef || !wrapperRef.current) return;
+      const { width, height } = wrapperRef.current.getBoundingClientRect();
+      setAvailableWidth(width);
+      setAvailableHeight(height);
+    };
+
+    const updatePercentageWatched = () => {
+      if (replayer.current) {
+        const currentTime = replayer.current.timer.timeOffset + replayer.current.getTimeOffset();
+        const totalTime = replay.duration * 1000
+        setPercentageWatched(currentTime / totalTime);
+        if (currentTime < totalTime)
+          animationFrameGlobalId.current = window.requestAnimationFrame(updatePercentageWatched)
+      } else {
+        animationFrameGlobalId.current = window.requestAnimationFrame(updatePercentageWatched)
+      }
+    }
+
     replayer.current = new Replayer(replay.events, {
       root: displayerRef.current,
     });
@@ -66,7 +65,6 @@ const Displayer = ({
       (availableWidth - 7) / contentWidth,
       (availableHeight - 7) / contentHeight,
     ));
-    console.log('displayer: ', percentageWatched);
   }, [availableWidth, availableHeight, contentWidth, contentHeight]);
 
   return (
@@ -93,7 +91,7 @@ const Displayer = ({
   transform: translate(-${50 * scale}%, -${50 * scale}%) scale(${scale});
   top: 50%;
 }
-          `}
+        `}
       </style>
       <style jsx global>
         {`
@@ -101,7 +99,7 @@ iframe {
   border: none;
   pointer-events: none;
 }
-`}
+        `}
       </style>
     </div>
   );

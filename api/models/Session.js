@@ -88,6 +88,7 @@ const aggregateSessionsById = [
       remoteIp: 0, // redact IP of customer
       customer: 0,
       shop: 0, // redundant information
+      sessionId: 0, // redundant information
     },
   }, { // Sort by newest session first
     $sort: {

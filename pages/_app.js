@@ -12,7 +12,7 @@ class MyApp extends App {
     // verify that the request has a properly signed token using
     // API_SECRET_KEY. We want to check if the accessToken in the json web
     // token is still authorized to confirm that the app is still installed and
-    // if the shop parameter matches the on claimed in the query string of the
+    // if the shop parameter matches the one claimed in the query string of the
     // URI. If any of these conditions are not met, redirect user to the proper
     // authorization URI.
     const shopOrigin = ctx.query.shop;

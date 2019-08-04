@@ -10,6 +10,7 @@ import 'rrweb/dist/rrweb.min.css';
 const Player = ({ replay, handleOutsideClick }) => {
   const displayerRef = useRef();
   const controllerRef = useRef();
+  const [newPlayPercentage, setNewPlayPercentage] = useState(0);
   const [percentageWatched, setPercentageWatched] = useState(0);
 
   const handleClick = (event) => {
@@ -36,12 +37,13 @@ const Player = ({ replay, handleOutsideClick }) => {
   return (
     <div className="player-container">
       <Displayer
-        percentageWatched={percentageWatched}
+        newPlayPercentage={newPlayPercentage}
         setPercentageWatched={setPercentageWatched}
         displayerRef={displayerRef}
         replay={replay}
       />
       <Controller
+        setNewPlayPercentage={percentageWatched}
         percentageWatched={percentageWatched}
         controllerRef={controllerRef}
       />

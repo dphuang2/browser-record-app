@@ -13,6 +13,7 @@ function clamp(x, min, max) {
 
 const Controller = ({
   percentageWatched,
+  setNewPlayPercentage,
   controllerRef,
 }) => {
 
@@ -21,11 +22,15 @@ const Controller = ({
 
   const handleMarkerDrag = (event, data) => {
     console.log({x: data.x});
-    console.log(percentageWatched);
+  }
+  
+  const handleMarkerStop = (event, data) => {
+    const { width } = progressBarRef.current.getBoundingClientRect();
+    setMarkerPosition(data.x);
+    setNewPlayPercentage(data.x / width);
   }
 
   const handleMarkerChange = () => {
-    console.log('controller: ', percentageWatched);
     const { width } = progressBarRef.current.getBoundingClientRect();
     const position = {x: clamp(percentageWatched, 0, 1.0) * width, y: 0};
     setMarkerPosition(position);
@@ -33,14 +38,12 @@ const Controller = ({
 
   useEffect(() => {
     window.addEventListener('resize', handleMarkerChange);
-    return () => {
-      window.removeEventListener('resize', handleMarkerChange);
-    }
-  }, [])
+    return () => window.removeEventListener('resize', handleMarkerChange);
+  }, [handleMarkerChange]);
 
   useEffect(() => {
     handleMarkerChange();
-  }, [percentageWatched]);
+  }, [handleMarkerChange, percentageWatched]);
 
   return (
     <div ref={controllerRef} className="controller">
@@ -51,7 +54,7 @@ const Controller = ({
           bounds="parent"
           position={markerPosition}
           onStart={handleMarkerDrag}
-          onStop={handleMarkerDrag}
+          onStop={handleMarkerStop}
         >
           <div className="marker" />
         </Draggable>
@@ -71,7 +74,7 @@ const Controller = ({
     }
 
     .progress-bar-wrapper {
-      width: calc(100% - 30px);
+      width: calc(100% - 50px);
       height: ${progressBarHeight}px;
       top: 0px;
 

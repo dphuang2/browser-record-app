@@ -1,6 +1,17 @@
 /* eslint no-console: ["error", { allow: ["error"] }] */
+import Cookies from 'cookies';
+import AWS from 'aws-sdk';
+import crypto from 'crypto';
 import Session from './models/Session';
 import connectToDatabase from '../utils/db';
+import { validateToken, redirect } from '../utils/auth';
+
+const config = new AWS.Config({
+  accessKeyId: process.env.AWS_KEY,
+  secretAccessKey: process.env.AWS_SECRET,
+  region: 'us-west-2',
+});
+AWS.config = config;
 
 function countNumClicks(events) {
   // Count the number of clicks.
@@ -39,9 +50,8 @@ export default async (req, res) => {
       await new Session(req.body).save();
       res.status(204).send();
     } else if (req.method === 'GET') {
-      await connectToDatabase(process.env.MONGODB_URI);
-
       if (req.query.id) {
+        await connectToDatabase(process.env.MONGODB_URI);
         const session = await Session.getSessionById(req.query.id);
 
         if (session.length === 0) {
@@ -51,9 +61,54 @@ export default async (req, res) => {
 
         res.status(200).json(session);
       } else if (req.query.shop) {
-        const sessions = await Session.getSessionsByShop(req.query.shop);
+        const cookies = new Cookies(req, res);
+        const token = cookies.get('token'); // JSON web token set in /api/callback
+        const valid = validateToken(req.query.shop, token);
+        if (valid) {
+          await connectToDatabase(process.env.MONGODB_URI);
+          const sessions = await Session.getSessionsByShop(req.query.shop);
 
-        res.status(200).json(sessions);
+          if (sessions.length === 0) {
+            res.status(404).send();
+            return;
+          }
+
+          const s3 = new AWS.S3({apiVersion: '2006-03-01'});
+          const sessionsStream = sessions.reduce((previous, session) => {
+            return previous + session.id + session.events.length.toString();
+          }, '')
+          const sessionsHash = crypto.createHash('md5').update(sessionsStream).digest('hex');
+
+          const params = {
+              Bucket: 'browser-record-payloads',
+              Key: sessionsHash,
+          };
+          // Check if object exists already. If it does just serve that object
+          try {
+            await s3.headObject(params).promise();
+            const uri = await s3.getSignedUrl('getObject', params)
+            redirect(res, uri);
+            return;
+          } catch (error) {
+            // The object did not exist so just continue
+          }
+
+          // Upload object to s3 and redirect to it
+          try {
+            await s3.upload({
+              ...params,
+              Body: JSON.stringify(sessions),
+              ContentType: "application/json"},
+            ).promise();
+            const uri = await s3.getSignedUrl(params)
+            redirect(res, uri);
+          } catch (error) {
+            console.error(error);
+            res.status(500).send();
+          }
+        } else {
+          res.status(401).send();
+        }
       }
     } else {
       res.status(418).send();

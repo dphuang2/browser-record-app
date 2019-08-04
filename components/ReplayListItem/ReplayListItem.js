@@ -41,7 +41,7 @@ const ReplayListItem = function mrl(props) {
     region,
     country,
     locationAvailable,
-    sessionId,
+    id,
     timestamp,
     duration,
     numClicks,
@@ -72,7 +72,7 @@ const ReplayListItem = function mrl(props) {
 
   return (
     <ResourceList.Item
-      id={sessionId}
+      id={id}
       media={media}
       onClick={handleItemClick}
     >
@@ -156,7 +156,7 @@ const ReplayListItem = function mrl(props) {
 
 ReplayListItem.propTypes = {
   os: PropTypes.string.isRequired,
-  sessionId: PropTypes.string.isRequired,
+  id: PropTypes.string.isRequired,
   country: PropTypes.string.isRequired,
   browser: PropTypes.string.isRequired,
   region: PropTypes.string.isRequired,

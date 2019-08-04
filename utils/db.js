@@ -3,7 +3,7 @@ import mongoose from 'mongoose';
 
 let cachedDb = null;
 
-async function connectToDatabase(uri) {
+export default async function connectToDatabase(uri) {
   if (cachedDb) {
     return cachedDb;
   }
@@ -27,5 +27,3 @@ export function avoidOverwriteModelError(modelName, schema) {
   }
   return newOrExistingModel;
 }
-
-export default connectToDatabase;
