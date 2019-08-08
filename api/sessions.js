@@ -36,18 +36,14 @@ function countNumClicks(events) {
 export default async (req, res) => {
   try {
     if (req.method === 'POST') {
-      if (!req.body) {
-        res.status(204).send();
-        return;
-      }
-
       await connectToDatabase(process.env.MONGODB_URI);
+      const parsed = JSON.parse(req.body);
 
-      const { events } = req.body;
+      const { events } = parsed;
       const numClicks = countNumClicks(events);
-      req.body.numClicks = numClicks;
+      parsed.numClicks = numClicks;
 
-      await new Session(req.body).save();
+      await new Session(parsed).save();
       res.status(204).send();
     } else if (req.method === 'GET') {
       if (req.query.id) {
@@ -80,8 +76,8 @@ export default async (req, res) => {
           const sessionsHash = crypto.createHash('md5').update(sessionsStream).digest('hex');
 
           const params = {
-              Bucket: 'browser-record-payloads',
-              Key: sessionsHash,
+            Bucket: 'browser-record-payloads',
+            Key: sessionsHash,
           };
           // Check if object exists already. If it does just serve that object
           try {
@@ -100,7 +96,7 @@ export default async (req, res) => {
               Body: JSON.stringify(sessions),
               ContentType: "application/json"},
             ).promise();
-            const uri = await s3.getSignedUrl(params)
+            const uri = await s3.getSignedUrl('getObject', params)
             redirect(res, uri);
           } catch (error) {
             console.error(error);

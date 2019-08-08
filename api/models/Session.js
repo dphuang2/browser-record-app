@@ -117,6 +117,7 @@ sessionSchema.statics.getSessionById = async function gsbi(id) {
   ].concat(aggregateSessionsById));
 };
 
-sessionSchema.index({ timestamp: 1 });
+sessionSchema.index({ shop: 'hashed', timestamp: 1 });
+sessionSchema.index({ id: 'hashed', timestamp: 1 });
 
 export default avoidOverwriteModelError('Session', sessionSchema);
