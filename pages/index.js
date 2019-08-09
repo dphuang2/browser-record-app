@@ -22,9 +22,7 @@ const sortOptions = [
 
 function createSortCompare(lambdaA, lambdaB, direction) {
   return function compare(a, b) {
-    if (lambdaA(a) < lambdaB(b)) return -1 * direction;
-    if (lambdaA(a) > lambdaB(b)) return 1 * direction;
-    return 0;
+    return lambdaA(a) - lambdaB(b) * direction;
   };
 }
 const getTimestamp = x => x.timestamp;
@@ -63,6 +61,7 @@ class Index extends React.Component {
     const { shopOrigin } = this.props;
     const response = await axios.get(`/api/sessions/shop/${shopOrigin}`);
     const replays = response.data;
+
     const replayMap = {};
     for (let i = 0; i < replays.length; i += 1) { replayMap[replays[i].id] = replays[i]; }
     this.setState({
@@ -137,10 +136,10 @@ class Index extends React.Component {
     return (
       <Page fullWidth>
         {currentReplay && (
-        <Player
-          replay={currentReplay}
-          handleOutsideClick={this.handleOutsideClick}
-        />
+          <Player
+            replay={currentReplay}
+            handleOutsideClick={this.handleOutsideClick}
+          />
         )}
         <Card>
           <ResourceList
