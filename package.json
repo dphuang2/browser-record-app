@@ -47,6 +47,6 @@
     "eslint-plugin-jsx-a11y": "^6.2.3",
     "eslint-plugin-react": "^7.14.3",
     "ngrok": "^3.2.3",
-    "now": "^15.8.7"
+    "now": "16.1.1"
   }
 }
