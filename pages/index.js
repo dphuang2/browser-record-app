@@ -22,7 +22,7 @@ const sortOptions = [
 
 function createSortCompare(lambdaA, lambdaB, direction) {
   return function compare(a, b) {
-    return lambdaA(a) - lambdaB(b) * direction;
+    return (lambdaA(a) - lambdaB(b)) * direction;
   };
 }
 const getTimestamp = x => x.timestamp;
