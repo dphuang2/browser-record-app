@@ -27,6 +27,7 @@ const Displayer = ({
   const [contentHeight, setContentHeight] = useState();
   const totalTime = useRef();
   const localPlaying = useRef();
+  const hasPlayed = useRef(false);
   const replayer = useRef();
 
   const updatePercentageWatched = () => {
@@ -87,11 +88,15 @@ const Displayer = ({
   useEffect(() => {
     if (playing) {
       if (percentageWatched >= 1) replayer.current.play(0);
-      else replayer.current.play(replayer.current.getCurrentTime());
+      else {
+        if (hasPlayed.current) replayer.current.resume(replayer.current.getCurrentTime());
+        else replayer.current.play(replayer.current.getCurrentTime());
+      } 
       animationFrameGlobalId = window.requestAnimationFrame(updatePercentageWatched)
       localPlaying.current = true;
     } else {
       replayer.current.pause();
+      hasPlayed.current = true;
       localPlaying.current = false;
     }
   }, [playing])
