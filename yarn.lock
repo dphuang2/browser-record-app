@@ -4519,10 +4519,10 @@ normalize-path@^3.0.0:
   resolved "https://registry.yarnpkg.com/normalize-path/-/normalize-path-3.0.0.tgz#0dcd69ff23a1c9b11fd0978316644a0388216a65"
   integrity sha512-6eZs5Ls3WtCisHWp9S2GUy8dqkpGi4BVSz3GaqiE6ezub0512ESztXUwUB6C6IKbQkY2Pnb/mD4WYojCRwcwLA==
 
-now@16.1.1:
-  version "16.1.1"
-  resolved "https://registry.yarnpkg.com/now/-/now-16.1.1.tgz#692c406158c21bb0371de137b5f9957c861a4810"
-  integrity sha512-SXro0fOBTVBn+A2wEYV63It706egm7swgo6qb8zp6g07pOK0PQ1smeO0wmdYbx2Kuk5+Deh5t92KnZQi8wZjzA==
+now@^16.1.2:
+  version "16.1.2"
+  resolved "https://registry.yarnpkg.com/now/-/now-16.1.2.tgz#9c05dc83852a4ff80534fe3830b53fdf807ff974"
+  integrity sha512-Wqbox4tfh1kglgKOOHRE49bsZoy1TMHsVSnrnEbC98LU+aXmuh853kKheyDXckqIaTGDAgs7HYV12ONgppLwUw==
 
 npm-bundled@^1.0.1:
   version "1.0.6"
@@ -5493,19 +5493,19 @@ ripemd160@^2.0.0, ripemd160@^2.0.1:
     hash-base "^3.0.0"
     inherits "^2.0.1"
 
-rrweb-snapshot@^0.7.12:
-  version "0.7.12"
-  resolved "https://registry.yarnpkg.com/rrweb-snapshot/-/rrweb-snapshot-0.7.12.tgz#c0f65c1d2213290f885874f25d42444c2a06770c"
-  integrity sha512-+Bai8uN5ln9jN9EpmKR4CbBPKpWPER+YEPIXyZh8ECoPLJgn94LNZvA9pF5DKGlLoGxT1pdjKfV1dLpr+ioUqg==
+rrweb-snapshot@^0.7.16:
+  version "0.7.16"
+  resolved "https://registry.yarnpkg.com/rrweb-snapshot/-/rrweb-snapshot-0.7.16.tgz#9cafd91693f3ad17ec2f79bf4c055adca61a8906"
+  integrity sha512-5CyLG9CZyEV/DjtcQNa4rhFqWxpMkfg/sk82E4QBnigiA38XuSzbVLe9wOIkL14rgNu/8r5JbtewE8x/aFCAgA==
 
-rrweb@^0.7.18:
-  version "0.7.18"
-  resolved "https://registry.yarnpkg.com/rrweb/-/rrweb-0.7.18.tgz#696b86a20d9f8e58729b27f27ab4f0f839b80a6e"
-  integrity sha512-kH1Cit+1jvbriC8WRuphgDhsYuKO+mexbmZUFEBj6LvOXct6+1cW9pyRyGkfwx9OBvuzosTbrQd3QVGGUZnBnQ==
+rrweb@^0.7.23:
+  version "0.7.23"
+  resolved "https://registry.yarnpkg.com/rrweb/-/rrweb-0.7.23.tgz#dea8efc98419329cc18ec66d0047e74fa75e2716"
+  integrity sha512-SRiePCaFMK+PqlWgSocbeXdWwYQHrK9bvmnENIFvN8jL8HInEF59ZNTHumCh2mmkAt7DHknZwbiHDTiajXoHCw==
   dependencies:
     "@types/smoothscroll-polyfill" "^0.3.0"
     mitt "^1.1.3"
-    rrweb-snapshot "^0.7.12"
+    rrweb-snapshot "^0.7.16"
     smoothscroll-polyfill "^0.4.3"
 
 run-async@^2.2.0:

@@ -10,8 +10,10 @@ import 'rrweb/dist/rrweb.min.css';
 const Player = ({ replay, handleOutsideClick }) => {
   const displayerRef = useRef();
   const controllerRef = useRef();
+  const [totalTime, setTotalTime] = useState(0);
   const [newPlayPercentage, setNewPlayPercentage] = useState(0);
   const [percentageWatched, setPercentageWatched] = useState(0);
+  const [playing, setPlaying] = useState(true);
 
   const handleClick = (event) => {
     if (
@@ -22,6 +24,7 @@ const Player = ({ replay, handleOutsideClick }) => {
         && controllerRef.current
         && controllerRef.current.contains(event.target))
     ) return;
+
     handleOutsideClick();
   };
 
@@ -38,13 +41,19 @@ const Player = ({ replay, handleOutsideClick }) => {
     <div className="player-container">
       <Displayer
         newPlayPercentage={newPlayPercentage}
+        percentageWatched={percentageWatched}
         setPercentageWatched={setPercentageWatched}
+        setTotalTime={setTotalTime}
         displayerRef={displayerRef}
+        playing={playing}
         replay={replay}
       />
       <Controller
-        setNewPlayPercentage={percentageWatched}
+        setPlaying={setPlaying}
+        totalTime={totalTime}
+        setNewPlayPercentage={setNewPlayPercentage}
         percentageWatched={percentageWatched}
+        playing={playing}
         controllerRef={controllerRef}
       />
       <style jsx>

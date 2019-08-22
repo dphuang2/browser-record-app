@@ -137,7 +137,7 @@ const ReplayListItem = function mrl(props) {
 @media(min-width: 800px) {
   .ReplayListItem {
     grid-template-columns: repeat(4, 1fr);
-    grid-template-areas: "hero . useragent clicks";
+    grid-template-areas: "hero hero useragent clicks";
   }
 
   .ReplayListItem__UserAgent {

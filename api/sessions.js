@@ -57,6 +57,8 @@ export default async (req, res) => {
 
         res.status(200).json(session);
       } else if (req.query.shop) {
+
+
         const cookies = new Cookies(req, res);
         const token = cookies.get('token'); // JSON web token set in /api/callback
         const valid = validateToken(req.query.shop, token);

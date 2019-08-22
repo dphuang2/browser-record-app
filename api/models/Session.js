@@ -117,6 +117,10 @@ sessionSchema.statics.getSessionById = async function gsbi(id) {
   ].concat(aggregateSessionsById));
 };
 
+sessionSchema.statics.getAllSessionIdsByShop = async function gasi(shop) {
+  return this.distinct('id', {shop});
+}
+
 sessionSchema.index({ shop: 'hashed', timestamp: 1 });
 sessionSchema.index({ id: 'hashed', timestamp: 1 });
 

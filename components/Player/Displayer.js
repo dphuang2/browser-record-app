@@ -6,8 +6,16 @@ import {
 import PropTypes from 'prop-types';
 import { Replayer } from 'rrweb';
 
+const STYLESHEET_TIMEOUT_DURATION = 3000 // 3 seconds to allow for stylesheets to load
+
+let animationFrameGlobalId;
+
 const Displayer = ({
+  newPlayPercentage,
+  percentageWatched,
   setPercentageWatched,
+  playing,
+  setTotalTime,
   replay,
   displayerRef 
 }) => {
@@ -17,8 +25,21 @@ const Displayer = ({
   const [availableHeight, setAvailableHeight] = useState();
   const [contentWidth, setContentWidth] = useState();
   const [contentHeight, setContentHeight] = useState();
+  const totalTime = useRef();
+  const localPlaying = useRef();
   const replayer = useRef();
-  const animationFrameGlobalId = useRef();
+
+  const updatePercentageWatched = () => {
+    if (localPlaying.current) {
+      if (replayer.current) {
+        const currentTime = replayer.current.getCurrentTime();
+        setPercentageWatched((currentTime / totalTime.current));
+        if (currentTime < totalTime.current) animationFrameGlobalId = window.requestAnimationFrame(updatePercentageWatched);
+      } else {
+        animationFrameGlobalId = window.requestAnimationFrame(updatePercentageWatched)
+      }
+    }
+  }
 
   useEffect(() => {
     const setAvailableDimensions = () => {
@@ -28,32 +49,23 @@ const Displayer = ({
       setAvailableHeight(height);
     };
 
-    const updatePercentageWatched = () => {
-      if (replayer.current) {
-        const currentTime = replayer.current.timer.timeOffset + replayer.current.getTimeOffset();
-        const totalTime = replay.duration * 1000
-        setPercentageWatched(currentTime / totalTime);
-        if (currentTime < totalTime)
-          animationFrameGlobalId.current = window.requestAnimationFrame(updatePercentageWatched)
-      } else {
-        animationFrameGlobalId.current = window.requestAnimationFrame(updatePercentageWatched)
-      }
-    }
-
     replayer.current = new Replayer(replay.events, {
       root: displayerRef.current,
+      loadTimeout: STYLESHEET_TIMEOUT_DURATION,
+      skipInactive: true,
     });
-    replayer.current.play();
+    totalTime.current = replayer.current.getMetaData().totalTime;
+    setTotalTime(totalTime.current);
     replayer.current.on('resize', (event) => {
       setContentWidth(event.width);
       setContentHeight(event.height);
       setAvailableDimensions();
     });
-    animationFrameGlobalId.current = window.requestAnimationFrame(updatePercentageWatched)
     window.addEventListener('resize', setAvailableDimensions);
     return () => {
       window.removeEventListener('resize', setAvailableDimensions);
-      window.cancelAnimationFrame(animationFrameGlobalId.current);
+      window.cancelAnimationFrame(animationFrameGlobalId);
+      replayer.current.timer.clear();
     };
   }, []);
 
@@ -67,6 +79,23 @@ const Displayer = ({
     ));
   }, [availableWidth, availableHeight, contentWidth, contentHeight]);
 
+  useEffect(() => {
+    replayer.current.play(newPlayPercentage * totalTime.current);
+    replayer.current.pause();
+  }, [newPlayPercentage]);
+
+  useEffect(() => {
+    if (playing) {
+      if (percentageWatched >= 1) replayer.current.play(0);
+      else replayer.current.play(replayer.current.getCurrentTime());
+      animationFrameGlobalId = window.requestAnimationFrame(updatePercentageWatched)
+      localPlaying.current = true;
+    } else {
+      replayer.current.pause();
+      localPlaying.current = false;
+    }
+  }, [playing])
+
   return (
     <div ref={wrapperRef} className="wrapper">
       <div
@@ -78,8 +107,8 @@ const Displayer = ({
 .wrapper {
   position: absolute;
   width: 90%;
-  height: 95%;
-  top: 47.5%;
+  height: 90%;
+  top: 45%;
   left:50%;
   transform: translate(-50%,-50%);
 }
@@ -97,7 +126,6 @@ const Displayer = ({
         {`
 iframe {
   border: none;
-  pointer-events: none;
 }
         `}
       </style>
@@ -109,7 +137,14 @@ Displayer.propTypes = {
   replay: PropTypes.shape({
     events: PropTypes.arrayOf(PropTypes.object).isRequired,
     duration: PropTypes.number.isRequired,
+
   }).isRequired,
+  setPercentageWatched: PropTypes.func.isRequired,
+  setTotalTime: PropTypes.func.isRequired,
+  displayerRef: PropTypes.shape({ current: PropTypes.any }).isRequired,
+  newPlayPercentage: PropTypes.number.isRequired,
+  percentageWatched: PropTypes.number.isRequired,
+  playing: PropTypes.bool.isRequired,
 };
 
 export default Displayer;

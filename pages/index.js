@@ -134,7 +134,7 @@ class Index extends React.Component {
       loading, replays, sortValue, currentReplay,
     } = this.state;
     return (
-      <Page fullWidth>
+      <Page>
         {currentReplay && (
           <Player
             replay={currentReplay}
