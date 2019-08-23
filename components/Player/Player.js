@@ -28,17 +28,12 @@ const Player = ({ replay, handleOutsideClick }) => {
     handleOutsideClick();
   };
 
-  useEffect(() => {
-    document.addEventListener('mousedown', handleClick);
-    document.addEventListener('touchstart', handleClick);
-    return () => {
-      document.removeEventListener('mousedown', handleClick);
-      document.removeEventListener('touchstart', handleClick);
-    };
-  }, []);
-
   return (
-    <div className="player-container">
+    <div
+      className="player-container"
+      onClick={handleClick}
+      role="presentation"
+    >
       <Displayer
         newPlayPercentage={newPlayPercentage}
         percentageWatched={percentageWatched}
