@@ -6,7 +6,8 @@ import {
 import PropTypes from 'prop-types';
 import { Replayer } from 'rrweb';
 
-const STYLESHEET_TIMEOUT_DURATION = 3000 // 3 seconds to allow for stylesheets to load
+const STYLESHEET_TIMEOUT_DURATION = 3000; // 3 seconds to allow for stylesheets to load
+const PRECISION_OFFSET = 5;
 
 let animationFrameGlobalId;
 
@@ -27,7 +28,7 @@ const Displayer = ({
   const [contentHeight, setContentHeight] = useState();
   const totalTime = useRef();
   const localPlaying = useRef();
-  const hasPlayed = useRef(false);
+  const lastPlayedTime = useRef();
   const replayer = useRef();
 
   const updatePercentageWatched = () => {
@@ -75,13 +76,14 @@ const Displayer = ({
     // width/height. Also account for browser lack of precision for transform
     // CSS property by decreasing available width and height.
     setScale(Math.min(
-      (availableWidth - 7) / contentWidth,
-      (availableHeight - 7) / contentHeight,
+      (availableWidth - PRECISION_OFFSET) / contentWidth,
+      (availableHeight - PRECISION_OFFSET) / contentHeight,
     ));
   }, [availableWidth, availableHeight, contentWidth, contentHeight]);
 
   useEffect(() => {
     replayer.current.play(newPlayPercentage * totalTime.current);
+    setPercentageWatched(newPlayPercentage);
     replayer.current.pause();
   }, [newPlayPercentage]);
 
@@ -89,14 +91,18 @@ const Displayer = ({
     if (playing) {
       if (percentageWatched >= 1) replayer.current.play(0);
       else {
-        if (hasPlayed.current) replayer.current.resume(replayer.current.getCurrentTime());
-        else replayer.current.play(replayer.current.getCurrentTime());
+        if (lastPlayedTime.current !== undefined &&
+          lastPlayedTime.current <= replayer.current.getCurrentTime()) {
+          replayer.current.resume(replayer.current.getCurrentTime());
+        } else {
+          replayer.current.play(replayer.current.getCurrentTime());
+        } 
       } 
       animationFrameGlobalId = window.requestAnimationFrame(updatePercentageWatched)
       localPlaying.current = true;
     } else {
+      lastPlayedTime.current = replayer.current.getCurrentTime();
       replayer.current.pause();
-      hasPlayed.current = true;
       localPlaying.current = false;
     }
   }, [playing])
@@ -110,7 +116,7 @@ const Displayer = ({
       <style jsx>
         {`
 .wrapper {
-  position: absolute;
+  position: fixed;
   width: 90%;
   height: 90%;
   top: 45%;
