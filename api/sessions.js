@@ -89,7 +89,7 @@ export default async (req, res) => {
             const session = sessions[i];
             const params = {
               Bucket: 'browser-record-payloads',
-              Key: session.id + session.events.length,
+              Key: session.id + '-' + session.events.length,
             };
             // Check if object exists already. If it does just serve that object
             try {
