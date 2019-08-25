@@ -1,7 +1,10 @@
 import {
   ResourceList,
   Page,
+  Frame,
+  Toast,
   Card,
+  FilterType,
 } from '@shopify/polaris';
 import axios from 'axios';
 import PropTypes from 'prop-types';
@@ -33,48 +36,90 @@ const getNumClicks = x => x.numClicks;
 const getPageLoads = x => x.pageLoads;
 const getCountry = x => x.country;
 const getClicksPerSecond = x => x.numClicks / x.duration;
-const timestampDesc = createSortCompare(getTimestamp, getTimestamp, -1);
-const timestampAsc = createSortCompare(getTimestamp, getTimestamp, 1);
-const numClicksDesc = createSortCompare(getNumClicks, getNumClicks, -1);
-const numClicksAsc = createSortCompare(getNumClicks, getNumClicks, 1);
-const pageLoadsDesc = createSortCompare(getPageLoads, getPageLoads, -1);
-const pageLoadsAsc = createSortCompare(getPageLoads, getPageLoads, 1);
-const durationDesc = createSortCompare(getDuration, getDuration, -1);
-const durationAsc = createSortCompare(getDuration, getDuration, 1);
-const countrySort = createSortCompare(getCountry, getCountry, -1);
-const clicksPerSecondDesc = createSortCompare(getClicksPerSecond, getClicksPerSecond, -1);
-const clicksPerSecondAsc = createSortCompare(getClicksPerSecond, getClicksPerSecond, 1);
+const sortOptionsMap = {
+  'TIMESTAMP_DESC': createSortCompare(getTimestamp, getTimestamp, -1),
+  'TIMESTAMP_ASC': createSortCompare(getTimestamp, getTimestamp, 1),
+  'CLICKS_DESC': createSortCompare(getNumClicks, getNumClicks, -1),
+  'CLICKS_ASC': createSortCompare(getNumClicks, getNumClicks, 1),
+  'PAGE_LOADS_DESC': createSortCompare(getPageLoads, getPageLoads, -1),
+  'PAGE_LOADS_ASC': createSortCompare(getPageLoads, getPageLoads, 1),
+  'DURATION_DESC': createSortCompare(getDuration, getDuration, -1),
+  'DURATION_ASC': createSortCompare(getDuration, getDuration, 1),
+  'CLICKS_PER_SECOND_DESC': createSortCompare(getClicksPerSecond, getClicksPerSecond, -1),
+  'CLICKS_PER_SECOND_ASC': createSortCompare(getClicksPerSecond, getClicksPerSecond, 1),
+  'COUNTRY': createSortCompare(getCountry, getCountry, -1),
+}
+
+const availableFilters = [
+  {
+    key: 'durationFilterGreater',
+    label: 'Duration (seconds) is greater',
+    operatorText: 'than',
+    type: FilterType.TextField,
+  },
+  {
+    key: 'durationFilterLess',
+    label: 'Duration (seconds) is less',
+    operatorText: 'than',
+    type: FilterType.TextField,
+  },
+]
 
 class Index extends React.Component {
   constructor(props) {
     super(props);
     this.state = {
       loading: false,
+      showToast: false,
       currentReplay: undefined,
       replays: [],
+      appliedFilters: [],
       sortValue: 'TIMESTAMP_DESC',
     };
     this.replayMap = {};
     this.handleSortChange = this.handleSortChange.bind(this);
     this.handleItemClick = this.handleItemClick.bind(this);
     this.handleOutsideClick = this.handleOutsideClick.bind(this);
+    this.handleFiltersChange = this.handleFiltersChange.bind(this);
+    this.dismissToast = this.dismissToast.bind(this);
   }
 
   async componentDidMount() {
     this.setState({
       loading: true,
     });
-    const { shopOrigin } = this.props;
-    const response = await axios.get(`/api/sessions/shop/${shopOrigin}`);
-    const replays = response.data;
+    this.getReplays();
+  }
 
-    for (let i = 0; i < replays.length; i += 1) {
-      const url = replays[i];
-      this.getReplayData(url);
+  async getReplays(filters) {
+    const { shopOrigin } = this.props;
+    try {
+      const response = await axios.get(`/api/sessions/shop/${shopOrigin}?filters=${encodeURIComponent(JSON.stringify(filters))}`);
+      const replays = response.data;
+
+      let promises = [];
+      for (let i = 0; i < replays.length; i += 1) {
+        const url = replays[i];
+        promises.push(this.getReplay(url));
+      }
+      await Promise.all(promises)
+      this.setState({
+        loading: false
+      })
+    } catch(error) {
+      if (error.response) {
+        switch (error.response.status) {
+          case 404:
+            this.setState({
+              loading: false,
+            })
+            return;
+        }
+      }
     }
   }
 
-  async getReplayData(url) {
+  async getReplay(url) {
     const response = await axios.get(url);
     const replay = response.data;
     this.replayMap[replay.id] = replay;
@@ -83,56 +128,36 @@ class Index extends React.Component {
       replays.push(replay);
       return {
         replays,
-        loading: false,
       }
     })
   }
 
+  dismissToast() {
+    this.setState({showToast: false});
+  }
+
+  handleFiltersChange(appliedFilters) {
+    const { loading } = this.state;
+    if (loading) {
+      this.setState({
+        showToast: true
+      })
+      return;
+    }
+    this.setState({
+      appliedFilters,
+      loading: true,
+      replays: []
+    })
+    this.getReplays(appliedFilters);
+  }
+
   handleSortChange(sortValue) {
     this.setState((state) => {
-      let replays;
-      switch (sortValue) {
-        case 'TIMESTAMP_DESC':
-          replays = state.replays.sort(timestampDesc);
-          break;
-        case 'TIMESTAMP_ASC':
-          replays = state.replays.sort(timestampAsc);
-          break;
-        case 'CLICKS_DESC':
-          replays = state.replays.sort(numClicksDesc);
-          break;
-        case 'CLICKS_ASC':
-          replays = state.replays.sort(numClicksAsc);
-          break;
-        case 'PAGE_LOADS_DESC':
-          replays = state.replays.sort(pageLoadsDesc);
-          break;
-        case 'PAGE_LOADS_ASC':
-          replays = state.replays.sort(pageLoadsAsc);
-          break;
-        case 'DURATION_DESC':
-          replays = state.replays.sort(durationDesc);
-          break;
-        case 'DURATION_ASC':
-          replays = state.replays.sort(durationAsc);
-          break;
-        case 'COUNTRY':
-          replays = state.replays.sort(countrySort);
-          break;
-        case 'CLICKS_PER_SECOND_DESC':
-          replays = state.replays.sort(clicksPerSecondDesc);
-          break;
-        case 'CLICKS_PER_SECOND_ASC':
-          replays = state.replays.sort(clicksPerSecondAsc);
-          break;
-        default:
-          replays = state.replays.sort(timestampDesc);
-          break;
-      }
       return {
         sortValue,
-        replays,
-      };
+        replays: state.replays.sort(sortOptionsMap[sortValue])
+      }
     });
   }
 
@@ -148,29 +173,53 @@ class Index extends React.Component {
 
   render() {
     const {
-      loading, replays, sortValue, currentReplay,
+      loading, replays, sortValue, currentReplay, appliedFilters, showToast
     } = this.state;
     return (
-      <Page>
-        {currentReplay && (
+      <Frame>
+        <Page>
+          {showToast && (
+          <Toast content="No actions allowed while loading replays" onDismiss={this.dismissToast} />
+    )}
+          {currentReplay && (
           <Player
             replay={currentReplay}
             handleOutsideClick={this.handleOutsideClick}
           />
         )}
-        <Card>
-          <ResourceList
-            loading={loading}
-            resourceName={{ singular: 'replay', plural: 'replays' }}
-            sortValue={sortValue}
-            onSortChange={this.handleSortChange}
-            sortOptions={sortOptions}
-            items={replays}
-            showHeader
-            renderItem={item => <ReplayListItem handleItemClick={this.handleItemClick} {...item} />}
-          />
-        </Card>
-      </Page>
+          <Card>
+            <ResourceList
+              loading={loading}
+              resourceName={{ singular: 'replay', plural: 'replays' }}
+              sortValue={sortValue}
+              sortOptions={sortOptions}
+              onSortChange={this.handleSortChange}
+              items={replays}
+              showHeader
+              renderItem={item => <ReplayListItem handleItemClick={this.handleItemClick} {...item} />}
+              filterControl={
+      (
+        <ResourceList.FilterControl
+          filters={availableFilters}
+          appliedFilters={appliedFilters}
+          onFiltersChange={this.handleFiltersChange}
+        />
+          )}
+            />
+          </Card>
+          <style jsx global>
+            {`
+              .Polaris-Connected__Item--connection .Polaris-Button {
+                border-top-right-radius: 3px !important;
+                border-bottom-right-radius: 3px !important;
+              }
+            .Polaris-Connected__Item--primary {
+              display: none !important;
+            }
+              `}
+          </style>
+        </Page>
+      </Frame>
     );
   }
 }

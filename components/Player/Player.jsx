@@ -3,6 +3,7 @@ import {
 } from 'react';
 
 import PropTypes from 'prop-types';
+import './Player.css';
 import { Replayer } from 'rrweb';
 import 'rrweb/dist/rrweb.min.css';
 
@@ -266,13 +267,13 @@ const Player = ({ replay, handleOutsideClick }) => {
             transform: translate(-50%,-50%);
           }
           .display {
-            background: white;
             position: fixed;
             transform-origin: 0 0;
             left: 50%;
             transform: translate(-${50 * scale}%, -${50 * scale}%) scale(${scale});
             top: 50%;
           }
+
           .controls {
             width: auto;
             position: absolute;
@@ -374,7 +375,6 @@ const Player = ({ replay, handleOutsideClick }) => {
             height: 33px;
             width: 4px;
             background-color: white;
-            border: black 1px solid;
           }
 
           .close:before {
@@ -384,13 +384,10 @@ const Player = ({ replay, handleOutsideClick }) => {
           .close:after {
             transform: rotate(-45deg);
           }
-              `}
-      </style>
-      <style jsx global>
-        {`
-              iframe {
-                border: none;
-              }
+          .Polaris-Connected__Item--connection:first-child {
+            border-top-right-radius: 3px;
+            border-bottom-right-radius: 3px;
+          }
               `}
       </style>
     </div>

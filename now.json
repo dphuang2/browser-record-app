@@ -33,7 +33,7 @@
       "methods": ["GET"]
     },
     {
-      "src": "/api/sessions/shop/(.*myshopify.com)$",
+      "src": "/api/sessions/shop/(.*myshopify.com)",
       "dest": "/api/sessions.js?shop=$1",
       "methods": ["GET"]
     },

@@ -1,10 +1,9 @@
 /* eslint no-console: ["error", { allow: ["error"] }] */
 import Cookies from 'cookies';
 import AWS from 'aws-sdk';
-import crypto from 'crypto';
 import Session from './models/Session';
 import connectToDatabase from '../utils/db';
-import { validateToken, redirect } from '../utils/auth';
+import { validateToken } from '../utils/auth';
 
 const config = new AWS.Config({
   accessKeyId: process.env.AWS_KEY,
@@ -76,8 +75,13 @@ export default async (req, res) => {
         const valid = validateToken(req.query.shop, token);
         if (valid) {
           await connectToDatabase(process.env.MONGODB_URI);
-          const sessions = await Session.getSessionsByShop(req.query.shop);
-
+          let filters;
+          try {
+            filters = JSON.parse(req.query.filters);
+          } catch(error) {
+            // Could not parse filters, oh well
+          }
+          const sessions = await Session.getSessionsByShop(req.query.shop, filters);
           if (sessions.length === 0) {
             res.status(404).send();
             return;

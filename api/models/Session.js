@@ -1,3 +1,4 @@
+/* eslint no-console: ["error", { allow: ["error"] }] */
 import mongoose, { Schema } from 'mongoose';
 import { avoidOverwriteModelError } from '../../utils/db';
 
@@ -11,6 +12,28 @@ const sessionSchema = new Schema({
   numClicks: Number,
   pageLoads: Number,
 });
+
+const availableFilters = {
+  durationFilterGreater: (duration) => {
+    return {
+      $match: {
+        duration: {
+          $gte: duration * 1
+        }
+      }
+    }
+  },
+  durationFilterLess: (duration) => {
+    return {
+      $match: {
+        duration: {
+          $lte: duration * 1
+        }
+      }
+    }
+  }
+}
+
 
 const aggregateSessionsById = [
   { // Make sure events are the proper order for concatenation
@@ -77,7 +100,7 @@ const aggregateSessionsById = [
       foreignField: 'sessionId',
       as: 'customer',
     },
-  }, { // Merge lookup document
+  }, { // Flatten document with customer data
     $replaceRoot: {
       newRoot: {
         $mergeObjects: [
@@ -103,14 +126,26 @@ const aggregateSessionsById = [
   },
 ];
 
-sessionSchema.statics.getSessionsByShop = async function gsbs(shop) {
-  return this.aggregate([
+sessionSchema.statics.getSessionsByShop = async function gsbs(shop, filters) {
+  let constructedAggregation = [
     { // Query for all sessions of a shop
       $match: {
         shop,
       },
     },
-  ].concat(aggregateSessionsById));
+  ].concat(aggregateSessionsById)
+  if (filters instanceof Array) {
+    for (let i = 0; i < filters.length; i++) {
+      try {
+        let { key, value } = filters[i];
+        constructedAggregation = constructedAggregation.concat(availableFilters[key](value))
+      } catch (Error) {
+        console.error(Error);
+      }
+    }
+  }
+
+  return this.aggregate(constructedAggregation);
 };
 
 sessionSchema.statics.getSessionById = async function gsbi(id) {
