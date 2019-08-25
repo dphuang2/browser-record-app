@@ -13,6 +13,8 @@ const sortOptions = [
   { label: 'Oldest session', value: 'TIMESTAMP_ASC' },
   { label: 'Most clicks', value: 'CLICKS_DESC' },
   { label: 'Least clicks', value: 'CLICKS_ASC' },
+  { label: 'Most page loads', value: 'PAGE_LOADS_DESC' },
+  { label: 'Least page loads', value: 'PAGE_LOADS_ASC' },
   { label: 'Longest duration', value: 'DURATION_DESC' },
   { label: 'Shortest duration', value: 'DURATION_ASC' },
   { label: 'Most clicks per second', value: 'CLICKS_PER_SECOND_DESC' },
@@ -28,12 +30,15 @@ function createSortCompare(lambdaA, lambdaB, direction) {
 const getTimestamp = x => x.timestamp;
 const getDuration = x => x.duration;
 const getNumClicks = x => x.numClicks;
+const getPageLoads = x => x.pageLoads;
 const getCountry = x => x.country;
 const getClicksPerSecond = x => x.numClicks / x.duration;
 const timestampDesc = createSortCompare(getTimestamp, getTimestamp, -1);
 const timestampAsc = createSortCompare(getTimestamp, getTimestamp, 1);
 const numClicksDesc = createSortCompare(getNumClicks, getNumClicks, -1);
 const numClicksAsc = createSortCompare(getNumClicks, getNumClicks, 1);
+const pageLoadsDesc = createSortCompare(getPageLoads, getPageLoads, -1);
+const pageLoadsAsc = createSortCompare(getPageLoads, getPageLoads, 1);
 const durationDesc = createSortCompare(getDuration, getDuration, -1);
 const durationAsc = createSortCompare(getDuration, getDuration, 1);
 const countrySort = createSortCompare(getCountry, getCountry, -1);
@@ -49,6 +54,7 @@ class Index extends React.Component {
       replays: [],
       sortValue: 'TIMESTAMP_DESC',
     };
+    this.replayMap = {};
     this.handleSortChange = this.handleSortChange.bind(this);
     this.handleItemClick = this.handleItemClick.bind(this);
     this.handleOutsideClick = this.handleOutsideClick.bind(this);
@@ -62,13 +68,24 @@ class Index extends React.Component {
     const response = await axios.get(`/api/sessions/shop/${shopOrigin}`);
     const replays = response.data;
 
-    const replayMap = {};
-    for (let i = 0; i < replays.length; i += 1) { replayMap[replays[i].id] = replays[i]; }
-    this.setState({
-      loading: false,
-      replays,
-      replayMap,
-    });
+    for (let i = 0; i < replays.length; i += 1) {
+      const url = replays[i];
+      this.getReplayData(url);
+    }
+  }
+
+  async getReplayData(url) {
+    const response = await axios.get(url);
+    const replay = response.data;
+    this.replayMap[replay.id] = replay;
+    this.setState(state => {
+      const { replays } = state;
+      replays.push(replay);
+      return {
+        replays,
+        loading: false,
+      }
+    })
   }
 
   handleSortChange(sortValue) {
@@ -86,6 +103,12 @@ class Index extends React.Component {
           break;
         case 'CLICKS_ASC':
           replays = state.replays.sort(numClicksAsc);
+          break;
+        case 'PAGE_LOADS_DESC':
+          replays = state.replays.sort(pageLoadsDesc);
+          break;
+        case 'PAGE_LOADS_ASC':
+          replays = state.replays.sort(pageLoadsAsc);
           break;
         case 'DURATION_DESC':
           replays = state.replays.sort(durationDesc);
@@ -120,13 +143,7 @@ class Index extends React.Component {
   }
 
   handleItemClick(id) {
-    this.setState((state) => {
-      const { replayMap } = state;
-      const currentReplay = replayMap[id];
-      return {
-        currentReplay,
-      };
-    });
+    this.setState({ currentReplay: this.replayMap[id], });
   }
 
   render() {

@@ -33,6 +33,18 @@ function countNumClicks(events) {
   return numClicks;
 }
 
+function countPageLoads(events) {
+  // Count the number of clicks.
+  // The criteria of a click is as follows:
+  // type: Meta (2): https://github.com/rrweb-io/rrweb/blob/master/typings/types.d.ts#L7
+  let numPageLoads = 0;
+  for (let i = 0; i < events.length; i += 1) {
+    const { type } = events[i];
+    if (type === 2) numPageLoads += 1;
+  }
+  return numPageLoads;
+}
+
 export default async (req, res) => {
   try {
     if (req.method === 'POST') {
@@ -40,8 +52,8 @@ export default async (req, res) => {
       const parsed = JSON.parse(req.body);
 
       const { events } = parsed;
-      const numClicks = countNumClicks(events);
-      parsed.numClicks = numClicks;
+      parsed.numClicks = countNumClicks(events);
+      parsed.pageLoads = countPageLoads(events);
 
       await new Session(parsed).save();
       res.status(204).send();
@@ -72,38 +84,39 @@ export default async (req, res) => {
           }
 
           const s3 = new AWS.S3({apiVersion: '2006-03-01'});
-          const sessionsStream = sessions.reduce((previous, session) => {
-            return previous + session.id + session.events.length.toString();
-          }, '')
-          const sessionsHash = crypto.createHash('md5').update(sessionsStream).digest('hex');
+          let urls = [];
+          for (let i = 0; i < sessions.length; i++) {
+            const session = sessions[i];
+            const params = {
+              Bucket: 'browser-record-payloads',
+              Key: session.id + session.events.length,
+            };
+            // Check if object exists already. If it does just serve that object
+            try {
+              await s3.headObject(params).promise();
+              const url = await s3.getSignedUrl('getObject', params)
+              urls.push(url);
+              continue;
+            } catch (error) {
+              // The object did not exist so just continue
+            }
 
-          const params = {
-            Bucket: 'browser-record-payloads',
-            Key: sessionsHash,
-          };
-          // Check if object exists already. If it does just serve that object
-          try {
-            await s3.headObject(params).promise();
-            const uri = await s3.getSignedUrl('getObject', params)
-            redirect(res, uri);
-            return;
-          } catch (error) {
-            // The object did not exist so just continue
-          }
+            // Upload object to s3 and redirect to it
+            try {
+              await s3.upload({
+                ...params,
+                Body: JSON.stringify(session),
+                ContentType: "application/json"},
+              ).promise();
+              const url = await s3.getSignedUrl('getObject', params)
+              urls.push(url);
+            } catch (error) {
+              console.error(error);
+              res.status(500).send();
+            }
 
-          // Upload object to s3 and redirect to it
-          try {
-            await s3.upload({
-              ...params,
-              Body: JSON.stringify(sessions),
-              ContentType: "application/json"},
-            ).promise();
-            const uri = await s3.getSignedUrl('getObject', params)
-            redirect(res, uri);
-          } catch (error) {
-            console.error(error);
-            res.status(500).send();
           }
+          res.status(200).send(JSON.stringify(urls));
         } else {
           res.status(401).send();
         }

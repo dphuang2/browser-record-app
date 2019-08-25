@@ -9,6 +9,7 @@ const sessionSchema = new Schema({
   shop: String,
   id: String,
   numClicks: Number,
+  pageLoads: Number,
 });
 
 const aggregateSessionsById = [
@@ -25,6 +26,9 @@ const aggregateSessionsById = [
       numClicks: {
         $sum: '$numClicks',
       },
+      pageLoads: {
+        $sum: '$pageLoads',
+      },
       timestamp: {
         $first: '$timestamp',
       },
@@ -35,6 +39,7 @@ const aggregateSessionsById = [
       id: '$_id',
       timestamp: 1,
       numClicks: 1,
+      pageLoads: 1,
       events: {
         $reduce: {
           input: '$events',
@@ -53,6 +58,7 @@ const aggregateSessionsById = [
       timestamp: 1,
       events: 1,
       numClicks: 1,
+      pageLoads: 1,
       duration: {
         $divide: [
           {

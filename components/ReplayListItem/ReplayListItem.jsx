@@ -46,6 +46,7 @@ const ReplayListItem = function mrl(props) {
     duration,
     numClicks,
     handleItemClick,
+    pageLoads,
   } = props;
 
   // Parse time
@@ -89,14 +90,24 @@ const ReplayListItem = function mrl(props) {
           </div>
         </div>
         <div className="ReplayListItem__UserAgent">
-          {browser}
-          {' on '}
-          {os}
+          <div className="ReplayListItem__Browser">
+            {browser}
+          </div>
+          <div className="ReplayListItem__OS">
+            {os}
+          </div>
         </div>
-        <div className="ReplayListItem__Clicks">
-          {numClicks}
-          {' '}
-          {numClicks === 1 ? 'click' : 'clicks'}
+        <div className="ReplayListItem_Interactions">
+          <div className="ReplayListItem__Clicks">
+            {numClicks}
+            {' '}
+            {numClicks === 1 ? 'click' : 'clicks'}
+          </div>
+          <div className="ReplayListItem__Clicks">
+            {pageLoads}
+            {' '}
+            {pageLoads === 1 ? 'page load' : 'page loads'}
+          </div>
         </div>
       </div>
       <style jsx>
@@ -107,7 +118,7 @@ const ReplayListItem = function mrl(props) {
   grid-template-areas:
   "hero"
   "useragent"
-  "clicks";
+  "interactions";
 }
 
 .ReplayListItem__Hero {
@@ -131,13 +142,13 @@ const ReplayListItem = function mrl(props) {
 }
 
 .ReplayListItem__Clicks {
-  grid-area: clicks;
+  grid-area: interactions;
 }
 
 @media(min-width: 800px) {
   .ReplayListItem {
     grid-template-columns: repeat(4, 1fr);
-    grid-template-areas: "hero hero useragent clicks";
+    grid-template-areas: "hero hero useragent interactions";
   }
 
   .ReplayListItem__UserAgent {
@@ -164,6 +175,7 @@ ReplayListItem.propTypes = {
   timestamp: PropTypes.number.isRequired,
   duration: PropTypes.number.isRequired,
   numClicks: PropTypes.number.isRequired,
+  pageLoads: PropTypes.number.isRequired,
   handleItemClick: PropTypes.func.isRequired,
 };
 
