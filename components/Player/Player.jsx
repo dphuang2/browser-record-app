@@ -194,25 +194,16 @@ const Player = ({ replay, handleOutsideClick }) => {
     }
   }, [playing])
 
-  const handleClick = (event) => {
-    if (
-      (displayerRef
-        && displayerRef.current
-        && displayerRef.current.contains(event.target))
-      || (controllerRef
-        && controllerRef.current
-        && controllerRef.current.contains(event.target))
-    ) return;
-
-    handleOutsideClick();
-  };
-
   return (
     <div
       className="player-container"
-      onClick={handleClick}
       role="presentation"
     >
+      <div
+        role="presentation"
+        className="close" 
+        onClick={handleOutsideClick}
+      />
       <div ref={displayerWrapperRef} className="wrapper">
         <div
           className="display"
@@ -361,7 +352,38 @@ const Player = ({ replay, handleOutsideClick }) => {
           .focused-marker {
             transform: scale(1);
           }
-          
+
+          .close {
+            z-index: 99999;
+            position: absolute;
+            left: 16px;
+            top: 16px;
+            width: 32px;
+            height: 32px;
+            opacity: 0.6;
+          }
+
+          .close:hover {
+            opacity: 1;
+          }
+
+          .close:before, .close:after {
+            position: absolute;
+            left: 15px;
+            content: ' ';
+            height: 33px;
+            width: 4px;
+            background-color: white;
+            border: black 1px solid;
+          }
+
+          .close:before {
+            transform: rotate(45deg);
+          }
+
+          .close:after {
+            transform: rotate(-45deg);
+          }
               `}
       </style>
       <style jsx global>
