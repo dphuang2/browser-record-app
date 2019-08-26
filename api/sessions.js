@@ -32,6 +32,35 @@ function countNumClicks(events) {
   return numClicks;
 }
 
+async function uploadToS3AndPushUrl(s3, session, urls) {
+  const params = {
+    Bucket: 'browser-record-payloads',
+    Key: session.id + '-' + session.events.length,
+  };
+  // Check if object exists already. If it does just serve that object
+  try {
+    await s3.headObject(params).promise();
+    const url = await s3.getSignedUrl('getObject', params)
+    urls.push(url);
+    return;
+  } catch (error) {
+    // The object did not exist so just continue
+  }
+
+  // Upload object to s3
+  try {
+    await s3.upload({
+      ...params,
+      Body: JSON.stringify(session),
+      ContentType: "application/json"},
+    ).promise();
+    const url = await s3.getSignedUrl('getObject', params)
+    urls.push(url);
+  } catch (error) {
+    console.error(error);
+  }
+}
+
 function countPageLoads(events) {
   // Count the number of clicks.
   // The criteria of a click is as follows:
@@ -68,8 +97,6 @@ export default async (req, res) => {
 
         res.status(200).json(session);
       } else if (req.query.shop) {
-
-
         const cookies = new Cookies(req, res);
         const token = cookies.get('token'); // JSON web token set in /api/callback
         const valid = validateToken(req.query.shop, token);
@@ -89,37 +116,12 @@ export default async (req, res) => {
 
           const s3 = new AWS.S3({apiVersion: '2006-03-01'});
           let urls = [];
+          let promises = [];
           for (let i = 0; i < sessions.length; i++) {
             const session = sessions[i];
-            const params = {
-              Bucket: 'browser-record-payloads',
-              Key: session.id + '-' + session.events.length,
-            };
-            // Check if object exists already. If it does just serve that object
-            try {
-              await s3.headObject(params).promise();
-              const url = await s3.getSignedUrl('getObject', params)
-              urls.push(url);
-              continue;
-            } catch (error) {
-              // The object did not exist so just continue
-            }
-
-            // Upload object to s3 and redirect to it
-            try {
-              await s3.upload({
-                ...params,
-                Body: JSON.stringify(session),
-                ContentType: "application/json"},
-              ).promise();
-              const url = await s3.getSignedUrl('getObject', params)
-              urls.push(url);
-            } catch (error) {
-              console.error(error);
-              res.status(500).send();
-            }
-
+            promises.push(uploadToS3AndPushUrl(s3, session, urls));
           }
+          await Promise.all(promises);
           res.status(200).send(JSON.stringify(urls));
         } else {
           res.status(401).send();
