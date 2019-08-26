@@ -266,12 +266,14 @@ const Player = ({ replay, handleOutsideClick }) => {
             left: 50%;
             transform: translate(-50%,-50%);
           }
+
           .display {
             position: fixed;
             transform-origin: 0 0;
             left: 50%;
             transform: translate(-${50 * scale}%, -${50 * scale}%) scale(${scale});
             top: 50%;
+            line-height: 100%;
           }
 
           .controls {
