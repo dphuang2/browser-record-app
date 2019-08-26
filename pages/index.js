@@ -101,6 +101,7 @@ class Index extends React.Component {
     }
     this.setState({
       loading: true,
+      appliedFilters: filters,
       replays: [],
     });
     try {
@@ -150,16 +151,6 @@ class Index extends React.Component {
   }
 
   handleFiltersChange(appliedFilters) {
-    const { loading } = this.state;
-    if (loading) {
-      this.setState({
-        showToast: true
-      })
-      return;
-    }
-    this.setState({
-      appliedFilters,
-    })
     this.getReplays(appliedFilters);
   }
 
@@ -205,7 +196,10 @@ class Index extends React.Component {
           )}
           <Card>
             <div className="refresh-button">
-              <Button onClick={this.handleRefreshButtonClick}>
+              <Button
+                onClick={this.handleRefreshButtonClick}
+                loading={loading}
+              >
                     Refresh
               </Button>
             </div>
