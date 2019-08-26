@@ -1,6 +1,7 @@
 import {
   ResourceList,
   Page,
+  Button,
   Frame,
   Toast,
   Card,
@@ -82,17 +83,26 @@ class Index extends React.Component {
     this.handleOutsideClick = this.handleOutsideClick.bind(this);
     this.handleFiltersChange = this.handleFiltersChange.bind(this);
     this.dismissToast = this.dismissToast.bind(this);
+    this.handleRefreshButtonClick = this.handleRefreshButtonClick.bind(this);
   }
 
   async componentDidMount() {
-    this.setState({
-      loading: true,
-    });
     this.getReplays();
   }
 
   async getReplays(filters) {
     const { shopOrigin } = this.props;
+    const { loading } = this.state;
+    if (loading) {
+      this.setState({
+        showToast: true
+      })
+      return;
+    }
+    this.setState({
+      loading: true,
+      replays: [],
+    });
     try {
       const response = await axios.get(`/api/sessions/shop/${shopOrigin}?filters=${encodeURIComponent(JSON.stringify(filters))}`);
       const replays = response.data;
@@ -103,8 +113,11 @@ class Index extends React.Component {
         promises.push(this.getReplay(url));
       }
       await Promise.all(promises)
-      this.setState({
-        loading: false
+      this.setState(({ replays, sortValue }) => {
+        return {
+          loading: false,
+          replays: replays.sort(sortOptionsMap[sortValue])
+        }
       })
     } catch(error) {
       if (error.response) {
@@ -146,8 +159,6 @@ class Index extends React.Component {
     }
     this.setState({
       appliedFilters,
-      loading: true,
-      replays: []
     })
     this.getReplays(appliedFilters);
   }
@@ -171,6 +182,11 @@ class Index extends React.Component {
     this.setState({ currentReplay: this.replayMap[id], });
   }
 
+  handleRefreshButtonClick() {
+    const { appliedFilters } = this.state;
+    this.getReplays(appliedFilters);
+  }
+
   render() {
     const {
       loading, replays, sortValue, currentReplay, appliedFilters, showToast
@@ -179,15 +195,20 @@ class Index extends React.Component {
       <Frame>
         <Page>
           {showToast && (
-          <Toast content="No actions allowed while loading replays" onDismiss={this.dismissToast} />
-    )}
+            <Toast content="No actions allowed while loading replays" onDismiss={this.dismissToast} />
+          )}
           {currentReplay && (
-          <Player
-            replay={currentReplay}
-            handleOutsideClick={this.handleOutsideClick}
-          />
-        )}
+            <Player
+              replay={currentReplay}
+              handleOutsideClick={this.handleOutsideClick}
+            />
+          )}
           <Card>
+            <div className="refresh-button">
+              <Button onClick={this.handleRefreshButtonClick}>
+                    Refresh
+              </Button>
+            </div>
             <ResourceList
               loading={loading}
               resourceName={{ singular: 'replay', plural: 'replays' }}
@@ -198,17 +219,30 @@ class Index extends React.Component {
               showHeader
               renderItem={item => <ReplayListItem handleItemClick={this.handleItemClick} {...item} />}
               filterControl={
-      (
-        <ResourceList.FilterControl
-          filters={availableFilters}
-          appliedFilters={appliedFilters}
-          onFiltersChange={this.handleFiltersChange}
-        />
-          )}
+                (
+                  <ResourceList.FilterControl
+                    filters={availableFilters}
+                    appliedFilters={appliedFilters}
+                    onFiltersChange={this.handleFiltersChange}
+                  />
+                )}
             />
           </Card>
+          <style jsx>
+            {`
+            .refresh-button {
+              top: 16px;
+              right: 16px;
+              z-index: 50;
+              position: absolute;
+            }
+                `}
+          </style>
           <style jsx global>
             {`
+              .Polaris-Card {
+                position: relative;
+              }
               .Polaris-Connected__Item--connection .Polaris-Button {
                 border-top-right-radius: 3px !important;
                 border-bottom-right-radius: 3px !important;
@@ -216,7 +250,7 @@ class Index extends React.Component {
             .Polaris-Connected__Item--primary {
               display: none !important;
             }
-              `}
+                `}
           </style>
         </Page>
       </Frame>
