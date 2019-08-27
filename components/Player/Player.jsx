@@ -13,6 +13,8 @@ const PROGRESS_COLOR = '#f00';
 const PROGRESS_BAR_BACKGROUND = 'rgba(255,255,255,.2)';
 const STYLESHEET_TIMEOUT_DURATION = 3000; // 3 seconds to allow for stylesheets to load
 const PRECISION_OFFSET = 5;
+const TOUCH_EVENTS = ['touchstart', 'touchmove', 'touchend'];
+const MOUSE_EVENTS = ['mousedown', 'mousemove', 'mouseup'];
 
 let animationFrameGlobalId;
 
@@ -28,6 +30,7 @@ const Player = ({ replay, handleOutsideClick }) => {
   const shouldUpdate = useRef(true);
   const wasPlaying = useRef(true);
   const currentlyScrubbing = useRef(false);
+  const lastMarkerPosition = useRef(0);
   const [scale, setScale] = useState();
   const [availableWidth, setAvailableWidth] = useState();
   const [availableHeight, setAvailableHeight] = useState();
@@ -39,26 +42,38 @@ const Player = ({ replay, handleOutsideClick }) => {
   const [currentTime, setCurrentTime] = useState(0);
   const [focused, setFocused] = useState(false);
 
-  /*
-  *We want to make sure that the playing state changes while dragging
-  */
-  const handleMarkerStart = () => {
+  const handleMarkerStart = (event) => {
     wasPlaying.current = playing;
     setPlaying(false);
     shouldUpdate.current = false;
     currentlyScrubbing.current = true;
+    updateReplayer(event);
+  }
+
+  const updateReplayer = (event) => {
+    const { width } = progressBarRef.current.getBoundingClientRect();
+    const newMarkerPosition = calculateMarkerPosition(event);
+    const newPercentageWatched = newMarkerPosition / width;
+    setMarkerPosition(newMarkerPosition)
+    setCurrentTime(newPercentageWatched * totalTime.current);
+    replayer.current.play(newPercentageWatched * totalTime.current);
+    replayer.current.pause();
   }
 
   const calculateMarkerPosition = (event) => {
+    event.preventDefault()
     // Get distance from left of screen for progress bar
     const { left, width } = progressBarRef.current.getBoundingClientRect();
     // Use distance and offset from left of window to calculate marker position
-    return clamp(event.clientX - left, 0, width);
+    const equalsEvent = (element) => { return element == event.type };
+    if (TOUCH_EVENTS.find(equalsEvent) && event.touches) {
+      if (event.touches.length >= 1)
+        lastMarkerPosition.current = clamp(event.touches[0].clientX - left, 0, width);
+    } else if (MOUSE_EVENTS.find(equalsEvent))
+      lastMarkerPosition.current = clamp(event.clientX - left, 0, width);
+    return lastMarkerPosition.current;
   }
 
-  /*
-  *For progress bar width update
-  */
   const handleMousemove = (event) => {
     if (currentlyScrubbing.current) {
       setMarkerPosition(calculateMarkerPosition(event));
@@ -127,13 +142,7 @@ const Player = ({ replay, handleOutsideClick }) => {
     };
     const handleMarkerStop = (event) => {
       if (currentlyScrubbing.current) {
-        const { width } = progressBarRef.current.getBoundingClientRect();
-        const newMarkerPosition = calculateMarkerPosition(event);
-        const newPercentageWatched = newMarkerPosition / width;
-        replayer.current.play(newPercentageWatched * totalTime.current);
-        replayer.current.pause();
-        setCurrentTime(newPercentageWatched * totalTime.current);
-        setMarkerPosition(newMarkerPosition);
+        updateReplayer(event);
         setPlaying(wasPlaying.current);
         shouldUpdate.current = true;
         currentlyScrubbing.current = false;
@@ -151,15 +160,24 @@ const Player = ({ replay, handleOutsideClick }) => {
       setAvailableDimensions();
     });
     replayer.current.play();
-    window.addEventListener('resize', setAvailableDimensions);
-    window.addEventListener('resize', handleNewPercentageWatchedOrResize);
-    window.addEventListener('mousemove', handleMousemove);
-    window.addEventListener('mouseup', handleMarkerStop);
+    window.addEventListener('resize', setAvailableDimensions, false);
+    window.addEventListener('resize', handleNewPercentageWatchedOrResize, false);
+
+    window.addEventListener('mousemove', handleMousemove, false);
+    window.addEventListener('touchmove', handleMousemove, false);
+
+    window.addEventListener('mouseup', handleMarkerStop, false);
+    window.addEventListener('touchend', handleMarkerStop, false);
     return () => {
-      window.removeEventListener('resize', handleNewPercentageWatchedOrResize);
-      window.removeEventListener('mousemove', handleMousemove);
-      window.removeEventListener('mouseup', handleMarkerStop);
-      window.removeEventListener('resize', setAvailableDimensions);
+      window.removeEventListener('resize', setAvailableDimensions, false);
+      window.removeEventListener('resize', handleNewPercentageWatchedOrResize, false);
+
+      window.removeEventListener('mousemove', handleMousemove, false);
+      window.removeEventListener('touchmove', handleMousemove, false);
+
+      window.removeEventListener('mouseup', handleMarkerStop, false);
+      window.removeEventListener('touchend', handleMarkerStop, false);
+
       window.cancelAnimationFrame(animationFrameGlobalId);
       replayer.current.timer.clear();
     };
@@ -224,10 +242,11 @@ const Player = ({ replay, handleOutsideClick }) => {
             onMouseEnter={handleFocus}
             onMouseLeave={handleDefocus}
             onMouseDown={handleMarkerStart}
+            onTouchStart={handleMarkerStart}
           />
           <div ref={progressBarRef} className="progress-bar">
             <div className="marker-wrapper">
-              <div className={focused ? 'marker focused-marker' : 'marker'} />
+              <div className={focused || currentlyScrubbing.current ? 'marker focused-marker' : 'marker'} />
             </div>
             <div className="play-progress" />
           </div>
@@ -377,6 +396,7 @@ const Player = ({ replay, handleOutsideClick }) => {
             height: 33px;
             width: 4px;
             background-color: white;
+            border: 1px solid black;
           }
 
           .close:before {
