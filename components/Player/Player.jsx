@@ -26,7 +26,7 @@ const Player = ({ replay, handleOutsideClick }) => {
   const replayer = useRef();
   const localPlaying = useRef();
   const lastPlayedTime = useRef();
-  const totalTime = useRef();
+  const totalTime = useRef(0);
   const shouldUpdate = useRef(true);
   const wasPlaying = useRef(true);
   const currentlyScrubbing = useRef(false);
