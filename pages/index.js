@@ -8,6 +8,9 @@ import {
   FilterType,
 } from '@shopify/polaris';
 import axios from 'axios';
+import UAParser from 'ua-parser-js';
+import { Context } from '@shopify/app-bridge-react';
+import { Redirect } from '@shopify/app-bridge/actions';
 import PropTypes from 'prop-types';
 import ReplayListItem from '../components/ReplayListItem';
 import Player from '../components/Player';
@@ -67,6 +70,7 @@ const availableFilters = [
 ]
 
 class Index extends React.Component {
+
   constructor(props) {
     super(props);
     this.state = {
@@ -87,6 +91,14 @@ class Index extends React.Component {
   }
 
   async componentDidMount() {
+    const app = this.context;
+    const redirect = Redirect.create(app);
+    if (UAParser(window.navigator.userAgent).device.type) {
+      console.log('test');
+      const { shopOrigin } = this.props;
+      const url = `${app.localOrigin}/auth?shop=${shopOrigin}`;
+      redirect.dispatch(Redirect.Action.REMOTE, url);
+    }
     this.getReplays();
   }
 
@@ -255,5 +267,6 @@ class Index extends React.Component {
 Index.propTypes = {
   shopOrigin: PropTypes.string.isRequired,
 };
+Index.contextType = Context;
 
 export default Index;

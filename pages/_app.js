@@ -7,6 +7,7 @@ import { validateToken, redirect } from '../utils/auth';
 import '@shopify/polaris/styles.css';
 
 class MyApp extends App {
+
   static async getInitialProps({ ctx }) {
     // First check if the shop query parameter is set, redirect if not. Then we
     // verify that the request has a properly signed token using
@@ -37,7 +38,7 @@ class MyApp extends App {
     const {
       Component, pageProps, shopOrigin, apiKey,
     } = this.props;
-    const config = { apiKey, shopOrigin, forceRedirect: true };
+    const config = { apiKey, shopOrigin };
     return (
       <Container>
         <Provider config={config}>
