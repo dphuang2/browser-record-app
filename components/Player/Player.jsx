@@ -3,12 +3,12 @@ import {
 } from 'react';
 
 import PropTypes from 'prop-types';
-import './Player.css';
 import { Replayer } from 'rrweb';
 import 'rrweb/dist/rrweb.min.css';
 
 const MARKER_SIZE = 13;
 const PROGRESS_BAR_HEIGHT = 5;
+const CONTROLS_HEIGHT = 35;
 const PROGRESS_COLOR = '#f00';
 const PROGRESS_BAR_BACKGROUND = 'rgba(255,255,255,.2)';
 const STYLESHEET_TIMEOUT_DURATION = 3000; // 3 seconds to allow for stylesheets to load
@@ -23,6 +23,9 @@ const Player = ({ replay, handleOutsideClick }) => {
   const displayerWrapperRef = useRef();
   const controllerRef = useRef();
   const progressBarRef = useRef();
+  const pauseOverlayRef = useRef();
+  const playOverlayRef = useRef();
+  const playPauseButtonRef = useRef();
   const replayer = useRef();
   const localPlaying = useRef();
   const lastPlayedTime = useRef();
@@ -44,10 +47,12 @@ const Player = ({ replay, handleOutsideClick }) => {
 
   const handleMarkerStart = (event) => {
     wasPlaying.current = playing;
-    setPlaying(false);
+    setPlayingWrapper(false);
     shouldUpdate.current = false;
     currentlyScrubbing.current = true;
     updateReplayer(event);
+    event.preventDefault();
+    event.stopPropagation();
   }
 
   const updateReplayer = (event) => {
@@ -77,6 +82,7 @@ const Player = ({ replay, handleOutsideClick }) => {
   const handleMousemove = (event) => {
     if (currentlyScrubbing.current) {
       setMarkerPosition(calculateMarkerPosition(event));
+      event.preventDefault();
     }
   }
 
@@ -92,10 +98,6 @@ const Player = ({ replay, handleOutsideClick }) => {
     if (!shouldUpdate.current) return;
     const { width } = progressBarRef.current.getBoundingClientRect();
     setMarkerPosition(clamp(percentageWatched, 0, 1.0) * width);
-  }
-
-  const handlePlayButtonClick = (event) => {
-    setPlaying(event.target.checked);
   }
 
   const clamp = (x, min, max) => {
@@ -126,11 +128,45 @@ const Player = ({ replay, handleOutsideClick }) => {
     }
   }
 
+  const togglePlay = () => {
+      if (!localPlaying.current) {
+        setPlayingWrapper(true);
+      } else {
+        setPlayingWrapper(false);
+      } 
+  }
+
+  const setPlayingWrapper = (playing) => {
+    if (playing) {
+      setPlaying(true)
+      playPauseButtonRef.current.setAttribute('style', '');
+    } else {
+      setPlaying(false);
+      playPauseButtonRef.current.setAttribute(
+        'style',
+        `border-style: solid; border-width: ${CONTROLS_HEIGHT / 2}px 0 ${CONTROLS_HEIGHT / 2}px ${CONTROLS_HEIGHT * .81}px;`
+      );
+    }
+  }
+
+  const handleMarkerStop = (event) => {
+    if (currentlyScrubbing.current) {
+      updateReplayer(event);
+      setPlayingWrapper(wasPlaying.current);
+      shouldUpdate.current = true;
+      currentlyScrubbing.current = false;
+    }
+    window.focus();
+    event.preventDefault();
+  }
+
   // Reflect percentage watched on the controller from displayer
   useEffect(() => {
     handleNewPercentageWatchedOrResize();
     setCurrentTime(percentageWatched * totalTime.current);
-    if (percentageWatched >= 1) setPlaying(false);
+    if (percentageWatched >= 1) {
+      setPlayingWrapper(false);
+    } 
   }, [percentageWatched]);
 
   useEffect(() => {
@@ -140,14 +176,7 @@ const Player = ({ replay, handleOutsideClick }) => {
       setAvailableWidth(width);
       setAvailableHeight(height);
     };
-    const handleMarkerStop = (event) => {
-      if (currentlyScrubbing.current) {
-        updateReplayer(event);
-        setPlaying(wasPlaying.current);
-        shouldUpdate.current = true;
-        currentlyScrubbing.current = false;
-      }
-    }
+
     replayer.current = new Replayer(replay.events, {
       root: displayerRef.current,
       loadTimeout: STYLESHEET_TIMEOUT_DURATION,
@@ -160,23 +189,14 @@ const Player = ({ replay, handleOutsideClick }) => {
       setAvailableDimensions();
     });
     replayer.current.play();
-    window.addEventListener('resize', setAvailableDimensions, false);
-    window.addEventListener('resize', handleNewPercentageWatchedOrResize, false);
+    window.addEventListener('resize', setAvailableDimensions);
+    window.addEventListener('resize', handleNewPercentageWatchedOrResize);
+    document.body.classList.add('stop-scrolling');
 
-    window.addEventListener('mousemove', handleMousemove, false);
-    window.addEventListener('touchmove', handleMousemove, false);
-
-    window.addEventListener('mouseup', handleMarkerStop, false);
-    window.addEventListener('touchend', handleMarkerStop, false);
     return () => {
-      window.removeEventListener('resize', setAvailableDimensions, false);
-      window.removeEventListener('resize', handleNewPercentageWatchedOrResize, false);
-
-      window.removeEventListener('mousemove', handleMousemove, false);
-      window.removeEventListener('touchmove', handleMousemove, false);
-
-      window.removeEventListener('mouseup', handleMarkerStop, false);
-      window.removeEventListener('touchend', handleMarkerStop, false);
+      window.removeEventListener('resize', setAvailableDimensions);
+      window.removeEventListener('resize', handleNewPercentageWatchedOrResize);
+      document.body.classList.remove('stop-scrolling');
 
       window.cancelAnimationFrame(animationFrameGlobalId);
       replayer.current.timer.clear();
@@ -195,7 +215,9 @@ const Player = ({ replay, handleOutsideClick }) => {
 
   useEffect(() => {
     if (playing) {
-      if (percentageWatched >= 0.99) replayer.current.play(0);
+      if (percentageWatched >= 0.99) {
+        replayer.current.play(0);
+      }
       else {
         if (lastPlayedTime.current !== undefined &&
           lastPlayedTime.current <= replayer.current.getCurrentTime()) {
@@ -206,28 +228,44 @@ const Player = ({ replay, handleOutsideClick }) => {
       }
       animationFrameGlobalId = window.requestAnimationFrame(updatePercentageWatched)
       localPlaying.current = true;
+      playOverlayRef.current.style.animation =  'fade 0.3s linear';
+      pauseOverlayRef.current.style.animation = '';
     } else {
       lastPlayedTime.current = replayer.current.getCurrentTime();
       replayer.current.pause();
       localPlaying.current = false;
+      playOverlayRef.current.style.animation = '';
+      pauseOverlayRef.current.style.animation =  'fade 0.3s linear';
     }
   }, [playing])
 
   return (
     <div
-      className="player-container"
       role="presentation"
+      className="player-container"
+      onMouseMove={handleMousemove}
+      onTouchMove={handleMousemove}
+      onMouseUp={handleMarkerStop}
+      onTouchEnd={handleMarkerStop}
     >
       <div
         role="presentation"
         className="close" 
         onClick={handleOutsideClick}
       />
-      <div ref={displayerWrapperRef} className="wrapper">
+      <div 
+        ref={displayerWrapperRef}
+        className="wrapper"
+      >
         <div
+          role="presentation"
           className="display"
           ref={displayerRef}
-        />
+          onClick={togglePlay}
+        >
+          <div ref={pauseOverlayRef} className="pause-overlay" />
+          <div ref={playOverlayRef} className="play-overlay" />
+        </div>
       </div>
       <div
         ref={controllerRef}
@@ -237,7 +275,8 @@ const Player = ({ replay, handleOutsideClick }) => {
           className="progress-bar-wrapper"
         >
           <div
-            role="presentation"
+            role="button"
+            tabIndex="0"
             className="progress-bar-padding"
             onMouseEnter={handleFocus}
             onMouseLeave={handleDefocus}
@@ -252,6 +291,14 @@ const Player = ({ replay, handleOutsideClick }) => {
           </div>
         </div>
         <div className="controls">
+          <div className="playpause-button-wrapper">
+            <button 
+              type="button"
+              ref={playPauseButtonRef}
+              className='playpause-button'
+              onClick={togglePlay} 
+            />
+          </div>
           <span className="time-display">
             {millisecondsToMinutes(currentTime)}
             {':'}
@@ -261,22 +308,98 @@ const Player = ({ replay, handleOutsideClick }) => {
             {':'}
             {millisecondsToSeconds(totalTime.current)}
           </span>
-          <input type="checkbox" checked={playing} onChange={handlePlayButtonClick} />
         </div>
       </div>
+      <style jsx global>
+        {`
+          @keyframes fade {
+            0%,100% { opacity: 0 }
+            25% { opacity: 1 }
+          }
+
+          .stop-scrolling {
+            height: 100%;
+            overflow: hidden;
+          }
+
+          .replayer-wrapper iframe {
+            border: none;
+            background: white;
+          }
+        `}
+      </style>
       <style jsx>
         {`
+          .playpause-button {
+            border: 0;
+            background: transparent;
+            box-sizing: border-box;
+            width: 0;
+            height: ${CONTROLS_HEIGHT}px;
+            border-color: transparent transparent transparent rgb(238, 238, 238);
+            transition: 100ms all ease;
+            cursor: pointer;
+            border-style: double;
+            border-width: 0px 0 0px ${CONTROLS_HEIGHT * .81}px;
+            opacity: .8;
+            padding: 0;
+            grid-area: playpause;
+          }
+          .playpause-button-wrapper {
+            height: ${CONTROLS_HEIGHT}px;
+            display: inline-block;
+            padding: 0 5px;
+            width: ${CONTROLS_HEIGHT}px;
+          }
+          .playpause-button:hover {
+            border-color: transparent transparent transparent rgb(238, 238, 238);
+            opacity: 1;
+          }
+          .play-overlay {
+            background: transparent;
+            box-sizing: border-box;
+            width: 0;
+            height: 100px;
+            border-color: transparent transparent transparent #000000b0;
+            cursor: pointer;
+            z-index: 9999;
+            border-style: solid;
+            border-width: 50px 0 50px 80px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            opacity: 0;
+            transform: translate(-50%, -50%);
+          }
+
+          .pause-overlay {
+            background: transparent;
+            box-sizing: border-box;
+            width: 0;
+            height: 100px;
+            border-color: #000000b0;
+            cursor: pointer;
+            z-index: 9999;
+            border-style: double;
+            border-width: 0px 0 0px 80px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            opacity: 0;
+            transform: translate(-50%, -50%);
+          }
+
           .player-container {
             position: fixed;
             top: 0;
             left: 0;
-            width:100%;
-            height: 100%;
+            width: 100vw;
+            height: 100vh;
             background: rgba(0, 0, 0, 0.6);
             z-index: 999999;
             display: block;
           }
-          
+
           .wrapper {
             position: fixed;
             width: 90%;
@@ -293,6 +416,7 @@ const Player = ({ replay, handleOutsideClick }) => {
             transform: translate(-${50 * scale}%, -${50 * scale}%) scale(${scale});
             top: 50%;
             line-height: 100%;
+            cursor: pointer;
           }
 
           .controls {
@@ -300,13 +424,20 @@ const Player = ({ replay, handleOutsideClick }) => {
             position: absolute;
             bottom: calc((100% - ${PROGRESS_BAR_HEIGHT}px) / 2);
             left: 50%;
+            height: ${CONTROLS_HEIGHT}px;
             transform: translate(-50%, 50%);
+            display: grid;
+            grid-gap: 20px;
+            grid-template-columns: repeat(1, 2fr);
+            grid-template-areas: "playpause time"
           }
-          
+
           .time-display {
             color:white;
+            grid-area: time;
+            line-height: ${CONTROLS_HEIGHT}px;
           }
-          
+
           .controller {
             position: fixed;
             bottom: 0;
@@ -316,35 +447,35 @@ const Player = ({ replay, handleOutsideClick }) => {
             display: block;
             z-index: 999;
           }
-          
+
           .progress-bar-padding {
             height: 16px;
             bottom: 0;
             width: 100%;
             position: absolute;
-            z-index: 998;
+            z-index: 1000;
           }
-          
+
           .progress-bar-wrapper {
             width: calc(100% - 50px);
             height: ${PROGRESS_BAR_HEIGHT}px;
             top: 0px;
-            
+
             position: absolute;
             left: 50%;
             transform: translate(-50%, 0);
           }
-          
+
           .progress-bar {
             width: calc(100% - ${MARKER_SIZE}px);
             height: 100%;
             background: ${PROGRESS_BAR_BACKGROUND};
-            
+
             position: absolute;
             left: 50%;
             transform: translate(-50%, 0);
           }
-          
+
           .play-progress {
             width: ${markerPosition}px;
             height: 100%;
@@ -352,14 +483,14 @@ const Player = ({ replay, handleOutsideClick }) => {
             position: absolute;
             left: 0;
           }
-          
+
           .marker-wrapper {
             position: absolute;
             width: ${MARKER_SIZE};
             height: ${MARKER_SIZE};
             left: calc(${markerPosition}px - ${MARKER_SIZE / 2}px);
           }
-          
+
           .marker {
             background: ${PROGRESS_COLOR};
             position: absolute;
@@ -370,7 +501,7 @@ const Player = ({ replay, handleOutsideClick }) => {
             transition: all .1s cubic-bezier(0.4,0.0,1,1);
             transform: scale(0);
           }
-          
+
           .focused-marker {
             transform: scale(1);
           }
@@ -410,7 +541,7 @@ const Player = ({ replay, handleOutsideClick }) => {
             border-top-right-radius: 3px;
             border-bottom-right-radius: 3px;
           }
-              `}
+        `}
       </style>
     </div>
   );
