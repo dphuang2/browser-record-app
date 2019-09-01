@@ -16,6 +16,25 @@ AWS.config = config;
 
 let cachedS3 = null;
 
+const availableFilters = {
+  durationFilterGreater: (duration) => {
+    return (session) => {
+      if (session.duration > duration)
+        return true;
+      else
+        return false;
+    }
+  },
+  durationFilterLess: (duration) => {
+    return (session) => {
+      if (session.duration < duration)
+        return true;
+      else
+        return false;
+    }
+  }
+}
+
 function getS3() {
   if (!cachedS3)
     cachedS3 = new AWS.S3({ apiVersion: API_VERSION });
@@ -96,7 +115,7 @@ async function getSignedUrlForSession(shop, id) {
 /** 
  * Aggregate session events from S3 and return combined object signed url
  */
-async function getSessionUrlFromS3(shop, customer) {
+async function getSessionUrlFromS3(shop, customer, filters) {
   const s3 = getS3();
   const params = {
     Bucket: BUCKET,
@@ -124,7 +143,7 @@ async function getSessionUrlFromS3(shop, customer) {
     /**
      * Now it is time to combine the objects
      */
-    let object = {
+    let session = {
       id: customer.sessionId,
       events: [],
       pageLoads: 0,
@@ -134,15 +153,26 @@ async function getSessionUrlFromS3(shop, customer) {
       ...customer,
     }
     objects.sort((a, b) => { return a.timestamp - b.timestamp; });
-    object.duration = (objects[objects.length - 1].timestamp - objects[0].timestamp) / 1000;
-    object.timestamp = objects[0].timestamp;
+    session.duration = (objects[objects.length - 1].timestamp - objects[0].timestamp) / 1000;
+    session.timestamp = objects[0].timestamp;
     objects.forEach((chunk) => {
-      Array.prototype.push.apply(object.events, chunk.events);
-      object.pageLoads += chunk.pageLoads;
-      object.numClicks += chunk.numClicks;
+      Array.prototype.push.apply(session.events, chunk.events);
+      session.pageLoads += chunk.pageLoads;
+      session.numClicks += chunk.numClicks;
     });
+    /**
+     * Apply any filters
+     */
+    for (let i = 0; i < filters.length; i++) {
+      const filter = filters[i];
+      if (!availableFilters[filter.key](filter.value)(session))
+        return undefined;
+    }
+    /**
+     * Upload constructed and filtered session object to s3
+     */
     await uploadSessionToS3(
-      JSON.stringify(object),
+      JSON.stringify(session),
       shop,
       customer.sessionId
     );

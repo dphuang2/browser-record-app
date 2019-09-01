@@ -73,7 +73,9 @@ export default async (req, res) => {
           customers.forEach((customer) => {
             const pushUrls = async () => {
               const url = await getSessionUrlFromS3(
-                req.query.shop, customer,
+                req.query.shop,
+                customer,
+                JSON.parse(req.query.filters)
               );
               if (url) urls.push(url);
             }
