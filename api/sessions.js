@@ -69,12 +69,18 @@ export default async (req, res) => {
           }
           let urls = [];
           let promises = [];
+          let filters;
+          try {
+            filters = JSON.parse(req.query.filters);
+          } catch(error) {
+            // no filter defined
+          }
           customers.forEach((customer) => {
             const pushUrls = async () => {
               const url = await getSessionUrlFromS3(
                 req.query.shop,
                 customer,
-                JSON.parse(req.query.filters)
+                filters
               );
               if (url) urls.push(url);
             }

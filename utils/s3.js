@@ -163,10 +163,12 @@ async function getSessionUrlFromS3(shop, customer, filters) {
     /**
      * Apply any filters
      */
-    for (let i = 0; i < filters.length; i++) {
-      const filter = filters[i];
-      if (!availableFilters[filter.key](filter.value)(session))
-        return undefined;
+    if (filters) {
+      for (let i = 0; i < filters.length; i++) {
+        const filter = filters[i];
+        if (!availableFilters[filter.key](filter.value)(session))
+          return undefined;
+      }
     }
     /**
      * Upload constructed and filtered session object to s3

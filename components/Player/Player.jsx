@@ -13,6 +13,7 @@ const PROGRESS_COLOR = '#f00';
 const PROGRESS_BAR_BACKGROUND = 'rgba(255,255,255,.2)';
 const STYLESHEET_TIMEOUT_DURATION = 3000; // 3 seconds to allow for stylesheets to load
 const PRECISION_OFFSET = 5;
+const REPLAY_WATCHED_THRESHOLD = 0.995;
 const TOUCH_EVENTS = ['touchstart', 'touchmove', 'touchend'];
 const MOUSE_EVENTS = ['mousedown', 'mousemove', 'mouseup'];
 
@@ -164,7 +165,7 @@ const Player = ({ replay, handleOutsideClick }) => {
   useEffect(() => {
     handleNewPercentageWatchedOrResize();
     setCurrentTime(percentageWatched * totalTime.current);
-    if (percentageWatched >= 1) {
+    if (percentageWatched >= REPLAY_WATCHED_THRESHOLD) {
       setPlayingWrapper(false);
     } 
   }, [percentageWatched]);
@@ -215,7 +216,7 @@ const Player = ({ replay, handleOutsideClick }) => {
 
   useEffect(() => {
     if (playing) {
-      if (percentageWatched >= 0.99) {
+      if (percentageWatched >= REPLAY_WATCHED_THRESHOLD) {
         replayer.current.play(0);
       }
       else {
