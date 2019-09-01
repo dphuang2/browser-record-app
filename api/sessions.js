@@ -1,16 +1,9 @@
 /* eslint no-console: ["error", { allow: ["error"] }] */
 import Cookies from 'cookies';
-import AWS from 'aws-sdk';
-import Session from './models/Session';
+import Customer from './models/Customer';
 import connectToDatabase from '../utils/db';
 import { validateToken } from '../utils/auth';
-
-const config = new AWS.Config({
-  accessKeyId: process.env.AWS_KEY,
-  secretAccessKey: process.env.AWS_SECRET,
-  region: 'us-west-2',
-});
-AWS.config = config;
+import { uploadSessionChunkToS3,  getSessionUrlFromS3 } from '../utils/s3';
 
 function countNumClicks(events) {
   // Count the number of clicks.
@@ -32,35 +25,6 @@ function countNumClicks(events) {
   return numClicks;
 }
 
-async function uploadToS3AndPushUrl(s3, session, urls) {
-  const params = {
-    Bucket: 'browser-record-payloads',
-    Key: session.id + '-' + session.events.length,
-  };
-  // Check if object exists already. If it does just serve that object
-  try {
-    await s3.headObject(params).promise();
-    const url = await s3.getSignedUrl('getObject', params)
-    urls.push(url);
-    return;
-  } catch (error) {
-    // The object did not exist so just continue
-  }
-
-  // Upload object to s3
-  try {
-    await s3.upload({
-      ...params,
-      Body: JSON.stringify(session),
-      ContentType: "application/json"},
-    ).promise();
-    const url = await s3.getSignedUrl('getObject', params)
-    urls.push(url);
-  } catch (error) {
-    console.error(error);
-  }
-}
-
 function countPageLoads(events) {
   // Count the number of clicks.
   // The criteria of a click is as follows:
@@ -78,51 +42,47 @@ export default async (req, res) => {
     if (req.method === 'POST') {
       await connectToDatabase(process.env.MONGODB_URI);
       const parsed = JSON.parse(req.body);
-
-      const { events } = parsed;
-      parsed.numClicks = countNumClicks(events);
-      parsed.pageLoads = countPageLoads(events);
-
-      await new Session(parsed).save();
+      parsed.pageLoads = countPageLoads(parsed.events);
+      parsed.numClicks = countNumClicks(parsed.events);
+      await uploadSessionChunkToS3(
+        JSON.stringify(parsed),
+        parsed.shop,
+        parsed.id,
+      );
       res.status(204).send();
     } else if (req.method === 'GET') {
-      if (req.query.id) {
-        await connectToDatabase(process.env.MONGODB_URI);
-        const session = await Session.getSessionById(req.query.id);
-
-        if (session.length === 0) {
-          res.status(404).send();
-          return;
-        }
-
-        res.status(200).json(session);
-      } else if (req.query.shop) {
+      if (req.query.shop) {
         const cookies = new Cookies(req, res);
         const token = cookies.get('token'); // JSON web token set in /api/callback
         const valid = validateToken(req.query.shop, token);
         if (valid) {
           await connectToDatabase(process.env.MONGODB_URI);
-          let filters;
-          try {
-            filters = JSON.parse(req.query.filters);
-          } catch(error) {
-            // Could not parse filters, oh well
-          }
-          const sessions = await Session.getSessionsByShop(req.query.shop, filters);
-          if (sessions.length === 0) {
+          //let filters;
+          //try {
+            //filters = JSON.parse(req.query.filters);
+          //} catch(error) {
+            //// Could not parse filters, oh well
+          //}
+          const customers = await Customer.find({ shop: req.query.shop }).lean();
+          if (customers.length === 0) {
             res.status(404).send();
             return;
           }
-
-          const s3 = new AWS.S3({apiVersion: '2006-03-01'});
           let urls = [];
           let promises = [];
-          for (let i = 0; i < sessions.length; i++) {
-            const session = sessions[i];
-            promises.push(uploadToS3AndPushUrl(s3, session, urls));
-          }
+          customers.forEach((customer) => {
+            const pushUrls = async () => {
+              const url = await getSessionUrlFromS3(
+                req.query.shop, customer,
+              );
+              if (url) urls.push(url);
+            }
+            promises.push(
+              pushUrls()
+            );
+          });
           await Promise.all(promises);
-          res.status(200).send(JSON.stringify(urls));
+          res.status(200).send(urls);
         } else {
           res.status(401).send();
         }
@@ -131,7 +91,7 @@ export default async (req, res) => {
       res.status(418).send();
     }
   } catch (error) {
-    console.error(error);
+    console.error(error, error.stack);
     res.status(500).send();
   }
 };

@@ -36,6 +36,7 @@
     "react-dom": "^16.8.6",
     "rrweb": "^0.7.23",
     "ua-parser-js": "^0.7.20",
+    "uuid": "^3.3.3",
     "webpack": "^4.37.0",
     "webpackbar": "^3.2.0"
   },
