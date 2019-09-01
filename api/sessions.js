@@ -40,7 +40,6 @@ function countPageLoads(events) {
 export default async (req, res) => {
   try {
     if (req.method === 'POST') {
-      await connectToDatabase(process.env.MONGODB_URI);
       const parsed = JSON.parse(req.body);
       parsed.pageLoads = countPageLoads(parsed.events);
       parsed.numClicks = countNumClicks(parsed.events);
