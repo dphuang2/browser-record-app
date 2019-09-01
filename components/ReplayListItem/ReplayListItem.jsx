@@ -51,9 +51,14 @@ const ReplayListItem = function mrl(props) {
 
   // Parse time
   let locationString = 'Location Not Available';
-  let media = <Avatar customer size="medium" name={locationString} source={`/assets/flags/${country.toLowerCase()}.svg`} />;
+  let media;
   if (locationAvailable) {
-    locationString = `${region}, ${country}`;
+    if (country) {
+      locationString = `${country}`;
+      if (region)
+        locationString = `${region}, ${country}`;
+    }
+    media = <Avatar customer size="medium" name={locationString} source={`/assets/flags/${country.toLowerCase()}.svg`} />;
   } else {
     media = <Avatar customer size="medium" name={locationString} />;
   }
