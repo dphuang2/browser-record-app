@@ -45,7 +45,12 @@ export default async (req, res) => {
         region,
         country,
         locationAvailable,
+        stale: true, // We haven't processed chunks so default is true
       };
+      /**
+       * We want to replace the existing customer document because the data
+       * could be stale and we don't want to filter in stale data
+       */
       await Customer.replaceOne({ sessionId: customer.sessionId }, customer, { upsert: true });
       res.status(204).send();
     }

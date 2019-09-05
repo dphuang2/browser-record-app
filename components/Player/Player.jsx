@@ -57,13 +57,22 @@ const Player = ({ replay, handleOutsideClick }) => {
     event.stopPropagation();
   }
 
+  const playAt = (newTime) => {
+    try {
+      replayer.current.play(newTime);
+    } catch(error) {
+      return false;
+    }
+    return true;
+  }
+
   const updateReplayer = (event) => {
     const { width } = progressBarRef.current.getBoundingClientRect();
     const newMarkerPosition = calculateMarkerPosition(event);
     const newPercentageWatched = newMarkerPosition / width;
+    playAt(newPercentageWatched * totalTime.current);
     setMarkerPosition(newMarkerPosition)
     setCurrentTime(newPercentageWatched * totalTime.current);
-    replayer.current.play(newPercentageWatched * totalTime.current);
     replayer.current.pause();
   }
 
@@ -190,7 +199,7 @@ const Player = ({ replay, handleOutsideClick }) => {
       setContentHeight(event.height);
       setAvailableDimensions();
     });
-    replayer.current.play();
+    playAt();
     window.addEventListener('resize', setAvailableDimensions);
     window.addEventListener('resize', handleNewPercentageWatchedOrResize);
     document.body.classList.add('stop-scrolling');
@@ -218,14 +227,14 @@ const Player = ({ replay, handleOutsideClick }) => {
   useEffect(() => {
     if (playing) {
       if (percentageWatched >= REPLAY_WATCHED_THRESHOLD) {
-        replayer.current.play(0);
+        playAt(0);
       }
       else {
         if (lastPlayedTime.current !== undefined &&
           lastPlayedTime.current <= replayer.current.getCurrentTime()) {
           replayer.current.resume(replayer.current.getCurrentTime());
         } else {
-          replayer.current.play(replayer.current.getCurrentTime());
+          playAt(replayer.current.getCurrentTime());
         }
       }
       animationFrameGlobalId = window.requestAnimationFrame(updatePercentageWatched)

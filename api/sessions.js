@@ -2,6 +2,7 @@
 import Cookies from 'cookies';
 import Customer from './models/Customer';
 import connectToDatabase from '../utils/db';
+import availableFilters from '../utils/filter';
 import { validateToken } from '../utils/auth';
 import { uploadSessionChunkToS3,  getSessionUrlFromS3 } from '../utils/s3';
 
@@ -37,17 +38,34 @@ function countPageLoads(events) {
   return numPageLoads;
 }
 
+function filtersToMongoFilters(filters) {
+  if (filters.length === 0)
+    return [{ sessionId: { $exists: true } }]
+  return filters.map(filter => availableFilters[filter.key]['mongodb'](filter.value));
+}
+
 export default async (req, res) => {
   try {
     if (req.method === 'POST') {
       const parsed = JSON.parse(req.body);
       parsed.pageLoads = countPageLoads(parsed.events);
       parsed.numClicks = countNumClicks(parsed.events);
-      await uploadSessionChunkToS3(
+      let promises = [];
+      promises.push(uploadSessionChunkToS3(
         JSON.stringify(parsed),
         parsed.shop,
         parsed.id,
-      );
+        parsed.timestamp,
+        parsed.events.length
+      ));
+      /**
+       * Invalidate customer session data in MongoDB
+       */
+      await connectToDatabase(process.env.MONGODB_URI);
+      promises.push(Customer.updateOne({ id: parsed.id }, {
+        $set: { stale: true }
+      }));
+      await Promise.all(promises);
       res.status(204).send();
     } else if (req.method === 'GET') {
       if (req.query.shop) {
@@ -55,26 +73,28 @@ export default async (req, res) => {
         const token = cookies.get('token'); // JSON web token set in /api/callback
         const valid = validateToken(req.query.shop, token);
         if (valid) {
-          await connectToDatabase(process.env.MONGODB_URI);
-          //let filters;
-          //try {
-            //filters = JSON.parse(req.query.filters);
-          //} catch(error) {
-            //// Could not parse filters, oh well
-          //}
-          const customers = await Customer.find({ shop: req.query.shop }).lean();
-          if (customers.length === 0) {
-            res.status(404).send();
-            return;
-          }
-          let urls = [];
-          let promises = [];
           let filters;
           try {
             filters = JSON.parse(req.query.filters);
           } catch(error) {
             // no filter defined
           }
+          await connectToDatabase(process.env.MONGODB_URI);
+          const query = {
+            $and: [
+              { shop: req.query.shop },
+              {
+                $and: filtersToMongoFilters(filters)
+              }
+            ]
+          };
+          const customers = await Customer.find(query).lean();
+          if (customers.length === 0) {
+            res.status(404).send();
+            return;
+          }
+          let urls = [];
+          let promises = [];
           customers.forEach((customer) => {
             const pushUrls = async () => {
               const url = await getSessionUrlFromS3(

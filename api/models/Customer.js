@@ -10,6 +10,11 @@ const customerSchema = new Schema({
   country: String,
   shop: String,
   locationAvailable: Boolean,
+  pageLoads: Number,
+  numClicks: Number,
+  timestamp: Number,
+  duration: Number,
+  stale: Boolean,
 });
 
 export default avoidOverwriteModelError('Customer', customerSchema);

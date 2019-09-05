@@ -76,6 +76,7 @@ class Index extends React.Component {
     this.state = {
       loading: false,
       showToast: false,
+      toastMessage: '',
       currentReplay: undefined,
       replays: [],
       appliedFilters: [],
@@ -83,6 +84,7 @@ class Index extends React.Component {
     };
     this.replayMap = {};
     this.handleSortChange = this.handleSortChange.bind(this);
+    this.setToastMessage = this.setToastMessage.bind(this);
     this.handleItemClick = this.handleItemClick.bind(this);
     this.handleOutsideClick = this.handleOutsideClick.bind(this);
     this.handleFiltersChange = this.handleFiltersChange.bind(this);
@@ -98,16 +100,22 @@ class Index extends React.Component {
       //const url = `${app.localOrigin}/auth?shop=${shopOrigin}`;
       //redirect.dispatch(Redirect.Action.REMOTE, url);
     //}
-    this.getReplays();
+    const { appliedFilters } = this.state;
+    this.getReplays(appliedFilters);
+  }
+
+  setToastMessage(toastMessage) {
+    this.setState({
+      showToast: true,
+      toastMessage
+    })
   }
 
   async getReplays(filters) {
     const { shopOrigin } = this.props;
     const { loading } = this.state;
     if (loading) {
-      this.setState({
-        showToast: true
-      })
+      this.setToastMessage('No actions allowed while loading replays');
       return;
     }
     this.setState({
@@ -161,8 +169,8 @@ class Index extends React.Component {
     this.setState({showToast: false});
   }
 
-  handleFiltersChange(appliedFilters) {
-    this.getReplays(appliedFilters);
+  async handleFiltersChange(appliedFilters) {
+    await this.getReplays(appliedFilters);
   }
 
   handleSortChange(sortValue) {
@@ -191,13 +199,19 @@ class Index extends React.Component {
 
   render() {
     const {
-      loading, replays, sortValue, currentReplay, appliedFilters, showToast
+      loading,
+      replays,
+      sortValue,
+      currentReplay,
+      appliedFilters,
+      showToast,
+      toastMessage
     } = this.state;
     return (
       <Frame>
         <Page>
           {showToast && (
-            <Toast content="No actions allowed while loading replays" onDismiss={this.dismissToast} />
+            <Toast content={toastMessage} onDismiss={this.dismissToast} />
           )}
           {currentReplay && (
             <Player
@@ -223,14 +237,13 @@ class Index extends React.Component {
               items={replays}
               showHeader
               renderItem={item => <ReplayListItem handleItemClick={this.handleItemClick} {...item} />}
-              filterControl={
-                (
-                  <ResourceList.FilterControl
-                    filters={availableFilters}
-                    appliedFilters={appliedFilters}
-                    onFiltersChange={this.handleFiltersChange}
-                  />
-                )}
+              filterControl={(
+                <ResourceList.FilterControl
+                  filters={availableFilters}
+                  appliedFilters={appliedFilters}
+                  onFiltersChange={this.handleFiltersChange}
+                />
+              )}
             />
           </Card>
           <style jsx>
