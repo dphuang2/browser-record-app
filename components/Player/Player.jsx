@@ -9,7 +9,7 @@ import 'rrweb/dist/rrweb.min.css';
 
 const MARKER_SIZE = 13;
 const PROGRESS_BAR_HEIGHT = 5;
-const CONTROLS_HEIGHT = 35;
+const CONTROLS_HEIGHT = 25;
 const PROGRESS_COLOR = '#f00';
 const PROGRESS_BAR_BACKGROUND = 'rgba(255,255,255,.2)';
 const STYLESHEET_TIMEOUT_DURATION = 3000; // 3 seconds to allow for stylesheets to load
