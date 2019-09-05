@@ -8,9 +8,9 @@ import {
   FilterType,
 } from '@shopify/polaris';
 import axios from 'axios';
-//import UAParser from 'ua-parser-js';
+import UAParser from 'ua-parser-js';
 import { Context } from '@shopify/app-bridge-react';
-//import { Redirect } from '@shopify/app-bridge/actions';
+import { Redirect } from '@shopify/app-bridge/actions';
 import React from 'react';
 import PropTypes from 'prop-types';
 import ReplayListItem from '../components/ReplayListItem';
@@ -95,13 +95,17 @@ class Index extends React.Component {
   }
 
   async componentDidMount() {
-    //const app = this.context;
-    //const redirect = Redirect.create(app);
-    //if (UAParser(window.navigator.userAgent).device.type) {
-      //const { shopOrigin } = this.props;
-      //const url = `${app.localOrigin}/auth?shop=${shopOrigin}`;
-      //redirect.dispatch(Redirect.Action.REMOTE, url);
-    //}
+    const app = this.context;
+    const redirect = Redirect.create(app);
+    if (UAParser(window.navigator.userAgent).device.type) {
+      try {
+        window.parent.location.href;
+      } catch(error) {
+        const { shopOrigin } = this.props;
+        const url = `${app.localOrigin}/auth?shop=${shopOrigin}`;
+        redirect.dispatch(Redirect.Action.REMOTE, url);
+      }
+    }
     const { appliedFilters } = this.state;
     this.getReplays(appliedFilters);
   }

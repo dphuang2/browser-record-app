@@ -88,7 +88,7 @@ export default async (req, res) => {
               }
             ]
           };
-          const customers = await Customer.find(query).lean();
+          const customers = await Customer.find(query).sort({ timestamp: 'desc' }).limit(50).lean();
           if (customers.length === 0) {
             res.status(404).send();
             return;
