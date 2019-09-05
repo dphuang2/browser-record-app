@@ -3,6 +3,7 @@ import {
 } from 'react';
 
 import PropTypes from 'prop-types';
+import { disableBodyScroll, clearAllBodyScrollLocks } from 'body-scroll-lock';
 import { Replayer } from 'rrweb';
 import 'rrweb/dist/rrweb.min.css';
 
@@ -20,7 +21,7 @@ const MOUSE_EVENTS = ['mousedown', 'mousemove', 'mouseup'];
 
 let animationFrameGlobalId;
 
-const Player = ({ replay, handleOutsideClick }) => {
+const Player = ({ resourceListRef, replay, handleOutsideClick }) => {
   const displayerRef = useRef();
   const displayerWrapperRef = useRef();
   const controllerRef = useRef();
@@ -202,15 +203,15 @@ const Player = ({ replay, handleOutsideClick }) => {
     playAt();
     window.addEventListener('resize', setAvailableDimensions);
     window.addEventListener('resize', handleNewPercentageWatchedOrResize);
-    document.body.classList.add('stop-scrolling');
+    disableBodyScroll(resourceListRef.current);
 
     return () => {
       window.removeEventListener('resize', setAvailableDimensions);
       window.removeEventListener('resize', handleNewPercentageWatchedOrResize);
-      document.body.classList.remove('stop-scrolling');
 
       window.cancelAnimationFrame(animationFrameGlobalId);
       replayer.current.timer.clear();
+      clearAllBodyScrollLocks();
     };
   }, [])
 
@@ -263,6 +264,7 @@ const Player = ({ replay, handleOutsideClick }) => {
         role="presentation"
         className="close" 
         onClick={handleOutsideClick}
+        onTouchEnd={handleOutsideClick}
       />
       <div 
         ref={displayerWrapperRef}
@@ -273,6 +275,7 @@ const Player = ({ replay, handleOutsideClick }) => {
           className="display"
           ref={displayerRef}
           onClick={togglePlay}
+          onTouchStart={togglePlay}
         >
           <div ref={pauseOverlayRef} className="pause-overlay" />
           <div ref={playOverlayRef} className="play-overlay" />
@@ -308,6 +311,7 @@ const Player = ({ replay, handleOutsideClick }) => {
               ref={playPauseButtonRef}
               className='playpause-button'
               onClick={togglePlay} 
+              onTouchStart={togglePlay}
             />
           </div>
           <span className="time-display">
@@ -326,11 +330,6 @@ const Player = ({ replay, handleOutsideClick }) => {
           @keyframes fade {
             0%,100% { opacity: 0 }
             25% { opacity: 1 }
-          }
-
-          .stop-scrolling {
-            height: 100%;
-            overflow: hidden;
           }
 
           .replayer-wrapper iframe {
@@ -559,6 +558,9 @@ const Player = ({ replay, handleOutsideClick }) => {
 };
 
 Player.propTypes = {
+  resourceListRef: PropTypes.shape({
+    current: PropTypes.object.isRequired,
+  }).isRequired,
   handleOutsideClick: PropTypes.func.isRequired,
   replay: PropTypes.shape({
     events: PropTypes.arrayOf(PropTypes.object).isRequired,

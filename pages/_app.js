@@ -38,7 +38,7 @@ class MyApp extends App {
     const {
       Component, pageProps, shopOrigin, apiKey,
     } = this.props;
-    const config = { apiKey, shopOrigin };
+    const config = { apiKey, shopOrigin, forceRedirect: false };
     return (
       <Container>
         <Provider config={config}>

@@ -139,7 +139,6 @@ const ReplayListItem = function mrl(props) {
 .ReplayListItem__Timestamp {
   color: #505050;
   font-style: italic;
-  display: inline;
 }
 
 .ReplayListItem__UserAgent {
@@ -154,6 +153,10 @@ const ReplayListItem = function mrl(props) {
   .ReplayListItem {
     grid-template-columns: repeat(4, 1fr);
     grid-template-areas: "hero hero useragent interactions";
+  }
+
+  .ReplayListItem__Timestamp {
+    display: inline;
   }
 
   .ReplayListItem__UserAgent {

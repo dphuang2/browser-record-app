@@ -11,6 +11,7 @@ import axios from 'axios';
 //import UAParser from 'ua-parser-js';
 import { Context } from '@shopify/app-bridge-react';
 //import { Redirect } from '@shopify/app-bridge/actions';
+import React from 'react';
 import PropTypes from 'prop-types';
 import ReplayListItem from '../components/ReplayListItem';
 import Player from '../components/Player';
@@ -82,6 +83,7 @@ class Index extends React.Component {
       appliedFilters: [],
       sortValue: 'TIMESTAMP_DESC',
     };
+    this.resourceListRef = React.createRef();
     this.replayMap = {};
     this.handleSortChange = this.handleSortChange.bind(this);
     this.setToastMessage = this.setToastMessage.bind(this);
@@ -182,10 +184,11 @@ class Index extends React.Component {
     });
   }
 
-  handleOutsideClick() {
+  handleOutsideClick(event) {
     this.setState({
       currentReplay: undefined,
     });
+    event.preventDefault();
   }
 
   handleItemClick(id) {
@@ -215,6 +218,7 @@ class Index extends React.Component {
           )}
           {currentReplay && (
             <Player
+              resourceListRef={this.resourceListRef}
               replay={currentReplay}
               handleOutsideClick={this.handleOutsideClick}
             />
@@ -229,6 +233,7 @@ class Index extends React.Component {
               </Button>
             </div>
             <ResourceList
+              ref={this.resourceListRef}
               loading={loading}
               resourceName={{ singular: 'replay', plural: 'replays' }}
               sortValue={sortValue}
