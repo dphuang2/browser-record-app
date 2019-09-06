@@ -39,6 +39,7 @@ export default async (req, res) => {
       const customer = {
         browser: agentData.browser.name,
         os: agentData.os.name,
+        isMobile: (agentData.device.type ? true : false),
         shop: body.shop,
         sessionId: body.id,
         remoteIp,

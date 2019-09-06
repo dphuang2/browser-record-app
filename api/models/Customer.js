@@ -10,6 +10,7 @@ const customerSchema = new Schema({
   country: String,
   shop: String,
   locationAvailable: Boolean,
+  isMobile: Boolean,
   pageLoads: Number,
   numClicks: Number,
   timestamp: Number,
