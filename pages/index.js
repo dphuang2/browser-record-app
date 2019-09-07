@@ -4,7 +4,6 @@ import {
   Page,
   Button,
   Frame,
-  Toast,
   Card,
   Filters,
   ButtonGroup,
@@ -12,7 +11,7 @@ import {
 } from '@shopify/polaris';
 import axios from 'axios';
 import UAParser from 'ua-parser-js';
-import { Context } from '@shopify/app-bridge-react';
+import { Toast, Context } from '@shopify/app-bridge-react';
 import { Redirect } from '@shopify/app-bridge/actions';
 import React from 'react';
 import PropTypes from 'prop-types';
@@ -145,6 +144,14 @@ class Index extends React.Component {
   }
 
   async clearFilters() {
+    let allEmpty = true;
+    Object.keys(availableFilters).forEach((key) => {
+      if (!isEmpty(this.state[key])) allEmpty = false;
+    })
+    if (allEmpty) {
+      this.setToastMessage('All filters are cleared already');
+      return;
+    }
     this.handleClearAll();
     this.applyFilters();
   }
@@ -287,16 +294,6 @@ class Index extends React.Component {
             }
             .Polaris-Filters-ConnectedFilterControl__CenterContainer {
               display: none;
-            }
-            `}
-          </style>
-          <style jsx>
-            {`
-            .refresh-button {
-              z-index: 50;
-              top: 8px;
-              left: calc(100% - 99px);
-              position: relative;
             }
             `}
           </style>
