@@ -1,3 +1,20 @@
+function disambiguateLabel(key, value) {
+  switch (key) {
+    case 'durationFilter':
+      return `Duration is between ${value[0]} and ${value[1]} seconds`;
+    default:
+      return value;
+  }
+}
+
+function isEmpty(value) {
+  if (Array.isArray(value)) {
+    return value.length === 0;
+  } else {
+    return value === '' || value == null;
+  }
+}
+
 const availableFilters = {
   durationFilterGreater: {
     functional: (duration) => {
@@ -16,7 +33,7 @@ const availableFilters = {
         ]
       }
     }
-  }, 
+  },
   durationFilterLess: {
     functional: (duration) => {
       return (session) => {
@@ -34,7 +51,25 @@ const availableFilters = {
         ]
       }
     }
-  }, 
+  },
+  durationFilter: {
+    functional: (lowerBound, upperBound) => {
+      return (session) => {
+        if (lowerBound <= session.duration && session.duration <= upperBound)
+          return true;
+        else
+          return false;
+      }
+    },
+    mongodb: (lowerBound, upperBound) => {
+      return {
+        $or: [
+          { duration: { $exists: false } },
+          { duration: { $exists: true, $lte: upperBound, $gte: lowerBound } }
+        ]
+      }
+    }
+  },
 };
 
-export default availableFilters;
+export { disambiguateLabel, isEmpty, availableFilters };

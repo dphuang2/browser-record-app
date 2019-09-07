@@ -3,8 +3,9 @@ import App, { Container } from 'next/app';
 import { AppProvider } from '@shopify/polaris';
 import { parseCookies } from 'nookies';
 import { Provider } from '@shopify/app-bridge-react';
+import enTranslations from '@shopify/polaris/locales/en.json';
 import { validateToken, redirect } from '../utils/auth';
-import '@shopify/polaris/styles.css';
+import '@shopify/polaris/styles.scss';
 
 class MyApp extends App {
 
@@ -42,7 +43,7 @@ class MyApp extends App {
     return (
       <Container>
         <Provider config={config}>
-          <AppProvider>
+          <AppProvider i18n={enTranslations}>
             <Component shopOrigin={shopOrigin} {...pageProps} />
           </AppProvider>
         </Provider>

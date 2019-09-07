@@ -2,9 +2,9 @@
 import Cookies from 'cookies';
 import Customer from './models/Customer';
 import connectToDatabase from '../utils/db';
-import availableFilters from '../utils/filter';
+import { availableFilters } from '../utils/filter';
 import { validateToken } from '../utils/auth';
-import { uploadSessionChunkToS3,  getSessionUrlFromS3 } from '../utils/s3';
+import { uploadSessionChunkToS3, getSessionUrlFromS3 } from '../utils/s3';
 
 function countNumClicks(events) {
   // Count the number of clicks.
@@ -27,8 +27,8 @@ function countNumClicks(events) {
 }
 
 function countPageLoads(events) {
-  // Count the number of clicks.
-  // The criteria of a click is as follows:
+  // Count the number of page loads.
+  // The criteria of a page loads is as follows:
   // type: Meta (2): https://github.com/rrweb-io/rrweb/blob/master/typings/types.d.ts#L7
   let numPageLoads = 0;
   for (let i = 0; i < events.length; i += 1) {
@@ -39,9 +39,13 @@ function countPageLoads(events) {
 }
 
 function filtersToMongoFilters(filters) {
-  if (filters.length === 0)
+  if (!filters || filters.length === 0)
     return [{ sessionId: { $exists: true } }]
-  return filters.map(filter => availableFilters[filter.key]['mongodb'](filter.value));
+  return filters.map(filter => {
+    if (filter.value instanceof Array)
+      return availableFilters[filter.key]['mongodb'](...filter.value);
+    return availableFilters[filter.key]['mongodb'](filter.value);
+  });
 }
 
 export default async (req, res) => {
@@ -76,7 +80,7 @@ export default async (req, res) => {
           let filters;
           try {
             filters = JSON.parse(req.query.filters);
-          } catch(error) {
+          } catch (error) {
             // no filter defined
           }
           await connectToDatabase(process.env.MONGODB_URI);
