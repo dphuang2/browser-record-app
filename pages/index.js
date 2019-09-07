@@ -5,7 +5,6 @@ import {
   Frame,
   Toast,
   Card,
-  FilterType,
 } from '@shopify/polaris';
 import axios from 'axios';
 import UAParser from 'ua-parser-js';
@@ -13,62 +12,24 @@ import { Context } from '@shopify/app-bridge-react';
 import { Redirect } from '@shopify/app-bridge/actions';
 import React from 'react';
 import PropTypes from 'prop-types';
+import { sortOptions, sortOptionsMap } from '../utils/sort';
 import ReplayListItem from '../components/ReplayListItem';
 import Player from '../components/Player';
 
-const sortOptions = [
-  { label: 'Newest session', value: 'TIMESTAMP_DESC' },
-  { label: 'Oldest session', value: 'TIMESTAMP_ASC' },
-  { label: 'Most clicks', value: 'CLICKS_DESC' },
-  { label: 'Least clicks', value: 'CLICKS_ASC' },
-  { label: 'Most page loads', value: 'PAGE_LOADS_DESC' },
-  { label: 'Least page loads', value: 'PAGE_LOADS_ASC' },
-  { label: 'Longest duration', value: 'DURATION_DESC' },
-  { label: 'Shortest duration', value: 'DURATION_ASC' },
-  { label: 'Most clicks per second', value: 'CLICKS_PER_SECOND_DESC' },
-  { label: 'Least click per second', value: 'CLICKS_PER_SECOND_ASC' },
-  { label: 'Country', value: 'COUNTRY' },
-];
-
-function createSortCompare(lambdaA, lambdaB, direction) {
-  return function compare(a, b) {
-    return (lambdaA(a) > lambdaB(b) ? 1 : -1) * direction;
-  };
-}
-const getTimestamp = x => x.timestamp;
-const getDuration = x => x.duration;
-const getNumClicks = x => x.numClicks;
-const getPageLoads = x => x.pageLoads;
-const getCountry = x => x.country;
-const getClicksPerSecond = x => x.numClicks / x.duration;
-const sortOptionsMap = {
-  'TIMESTAMP_DESC': createSortCompare(getTimestamp, getTimestamp, -1),
-  'TIMESTAMP_ASC': createSortCompare(getTimestamp, getTimestamp, 1),
-  'CLICKS_DESC': createSortCompare(getNumClicks, getNumClicks, -1),
-  'CLICKS_ASC': createSortCompare(getNumClicks, getNumClicks, 1),
-  'PAGE_LOADS_DESC': createSortCompare(getPageLoads, getPageLoads, -1),
-  'PAGE_LOADS_ASC': createSortCompare(getPageLoads, getPageLoads, 1),
-  'DURATION_DESC': createSortCompare(getDuration, getDuration, -1),
-  'DURATION_ASC': createSortCompare(getDuration, getDuration, 1),
-  'CLICKS_PER_SECOND_DESC': createSortCompare(getClicksPerSecond, getClicksPerSecond, -1),
-  'CLICKS_PER_SECOND_ASC': createSortCompare(getClicksPerSecond, getClicksPerSecond, 1),
-  'COUNTRY': createSortCompare(getCountry, getCountry, -1),
-}
-
-const availableFilters = [
-  {
-    key: 'durationFilterGreater',
-    label: 'Duration (seconds) is greater',
-    operatorText: 'than',
-    type: FilterType.TextField,
-  },
-  {
-    key: 'durationFilterLess',
-    label: 'Duration (seconds) is less',
-    operatorText: 'than',
-    type: FilterType.TextField,
-  },
-]
+//const availableFilters = [
+  //{
+    //key: 'durationFilterGreater',
+    //label: 'Duration (seconds) is greater',
+    //operatorText: 'than',
+    //type: FilterType.TextField,
+  //},
+  //{
+    //key: 'durationFilterLess',
+    //label: 'Duration (seconds) is less',
+    //operatorText: 'than',
+    //type: FilterType.TextField,
+  //},
+//]
 
 class Index extends React.Component {
 
@@ -80,7 +41,6 @@ class Index extends React.Component {
       toastMessage: '',
       currentReplay: undefined,
       replays: [],
-      appliedFilters: [],
       sortValue: 'TIMESTAMP_DESC',
     };
     this.resourceListRef = React.createRef();
@@ -89,7 +49,6 @@ class Index extends React.Component {
     this.setToastMessage = this.setToastMessage.bind(this);
     this.handleItemClick = this.handleItemClick.bind(this);
     this.handleOutsideClick = this.handleOutsideClick.bind(this);
-    this.handleFiltersChange = this.handleFiltersChange.bind(this);
     this.dismissToast = this.dismissToast.bind(this);
     this.handleRefreshButtonClick = this.handleRefreshButtonClick.bind(this);
   }
@@ -106,8 +65,7 @@ class Index extends React.Component {
         redirect.dispatch(Redirect.Action.REMOTE, url);
       }
     }
-    const { appliedFilters } = this.state;
-    this.getReplays(appliedFilters);
+    this.getReplays([]);
   }
 
   setToastMessage(toastMessage) {
@@ -126,7 +84,6 @@ class Index extends React.Component {
     }
     this.setState({
       loading: true,
-      appliedFilters: filters,
       replays: [],
     });
     try {
@@ -175,10 +132,6 @@ class Index extends React.Component {
     this.setState({showToast: false});
   }
 
-  async handleFiltersChange(appliedFilters) {
-    await this.getReplays(appliedFilters);
-  }
-
   handleSortChange(sortValue) {
     this.setState((state) => {
       return {
@@ -210,7 +163,6 @@ class Index extends React.Component {
       replays,
       sortValue,
       currentReplay,
-      appliedFilters,
       showToast,
       toastMessage
     } = this.state;
@@ -246,24 +198,14 @@ class Index extends React.Component {
               items={replays}
               showHeader
               renderItem={item => <ReplayListItem handleItemClick={this.handleItemClick} {...item} />}
-              filterControl={(
-                <ResourceList.FilterControl
-                  filters={availableFilters}
-                  appliedFilters={appliedFilters}
-                  onFiltersChange={this.handleFiltersChange}
-                />
-              )}
             />
           </Card>
           <style jsx>
             {`
             .refresh-button {
-              top: 16px;
-              right: 16px;
               z-index: 50;
-              position: absolute;
             }
-                `}
+            `}
           </style>
           <style jsx global>
             {`
