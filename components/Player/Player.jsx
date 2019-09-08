@@ -61,7 +61,7 @@ const Player = ({ resourceListRef, replay, handleOutsideClick }) => {
   const playAt = (newTime) => {
     try {
       replayer.current.play(newTime);
-    } catch(error) {
+    } catch (error) {
       return false;
     }
     return true;
@@ -141,11 +141,11 @@ const Player = ({ resourceListRef, replay, handleOutsideClick }) => {
   }
 
   const togglePlay = () => {
-      if (!localPlaying.current) {
-        setPlayingWrapper(true);
-      } else {
-        setPlayingWrapper(false);
-      } 
+    if (!localPlaying.current) {
+      setPlayingWrapper(true);
+    } else {
+      setPlayingWrapper(false);
+    }
   }
 
   const setPlayingWrapper = (playing) => {
@@ -178,7 +178,7 @@ const Player = ({ resourceListRef, replay, handleOutsideClick }) => {
     setCurrentTime(percentageWatched * totalTime.current);
     if (percentageWatched >= REPLAY_WATCHED_THRESHOLD) {
       setPlayingWrapper(false);
-    } 
+    }
   }, [percentageWatched]);
 
   useEffect(() => {
@@ -262,11 +262,11 @@ const Player = ({ resourceListRef, replay, handleOutsideClick }) => {
     >
       <div
         role="presentation"
-        className="close" 
+        className="close"
         onClick={handleOutsideClick}
         onTouchEnd={handleOutsideClick}
       />
-      <div 
+      <div
         ref={displayerWrapperRef}
         className="wrapper"
       >
@@ -306,11 +306,11 @@ const Player = ({ resourceListRef, replay, handleOutsideClick }) => {
         </div>
         <div className="controls">
           <div className="playpause-button-wrapper">
-            <button 
+            <button
               type="button"
               ref={playPauseButtonRef}
               className='playpause-button'
-              onClick={togglePlay} 
+              onClick={togglePlay}
               onTouchStart={togglePlay}
             />
           </div>
@@ -546,10 +546,6 @@ const Player = ({ resourceListRef, replay, handleOutsideClick }) => {
 
           .close:after {
             transform: rotate(-45deg);
-          }
-          .Polaris-Connected__Item--connection:first-child {
-            border-top-right-radius: 3px;
-            border-bottom-right-radius: 3px;
           }
         `}
       </style>
