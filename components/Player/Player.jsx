@@ -178,6 +178,7 @@ const Player = ({ resourceListRef, replay, handleOutsideClick }) => {
     setCurrentTime(percentageWatched * totalTime.current);
     if (percentageWatched >= REPLAY_WATCHED_THRESHOLD) {
       setPlayingWrapper(false);
+      setPercentageWatched(totalTime.current);
     }
   }, [percentageWatched]);
 
