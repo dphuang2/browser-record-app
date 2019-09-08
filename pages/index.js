@@ -34,7 +34,7 @@ class Index extends React.Component {
       durationFilter: null,
       shortestDuration: Number.MAX_SAFE_INTEGER,
       longestDuration: Number.MIN_SAFE_INTEGER,
-      lastFilters: {}
+      lastFilters: {},
     };
     this.resourceListRef = React.createRef();
     this.replayMap = {};
@@ -86,12 +86,29 @@ class Index extends React.Component {
     });
     try {
       const response = await axios.get(`/api/sessions/shop/${shopOrigin}?filters=${encodeURIComponent(JSON.stringify(filters))}`);
-      const replays = response.data;
+      const urls = response.data;
+
+
+      const getReplay = async (url) => {
+        const response = await axios.get(url);
+        const replay = response.data;
+        this.replayMap[replay.id] = replay;
+        this.setState(state => {
+          const { replays, shortestDuration, longestDuration } = state;
+          replays.push(replay);
+          let finalState = { replays };
+          if (replay.duration < shortestDuration)
+            finalState.shortestDuration = Math.floor(replay.duration);
+          else if (replay.duration > longestDuration)
+            finalState.longestDuration = Math.ceil(replay.duration);
+          return finalState;
+        })
+      };
 
       let promises = [];
-      for (let i = 0; i < replays.length; i += 1) {
-        const url = replays[i];
-        promises.push(this.getReplay(url));
+      for (let i = 0; i < urls.length; i += 1) {
+        const url = urls[i];
+        promises.push(getReplay(url));
       }
       await Promise.all(promises)
       this.setState(({ replays, sortValue }) => {
@@ -111,21 +128,6 @@ class Index extends React.Component {
         }
       }
     }
-  }
-
-  async getReplay(url) {
-    const response = await axios.get(url);
-    const replay = response.data;
-    this.replayMap[replay.id] = replay;
-    this.setState(state => {
-      const { replays, shortestDuration, longestDuration } = state;
-      replays.push(replay);
-      if (replay.duration < shortestDuration)
-        return { replays, shortestDuration: Math.floor(replay.duration) }
-      else if (replay.duration > longestDuration)
-        return { replays, longestDuration: Math.ceil(replay.duration) }
-      return { replays }
-    })
   }
 
   getFilters() {
