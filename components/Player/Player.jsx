@@ -15,7 +15,7 @@ const PROGRESS_BAR_BACKGROUND = 'rgba(255,255,255,.2)';
 const STYLESHEET_TIMEOUT_DURATION = 3000; // 3 seconds to allow for stylesheets to load
 const PRECISION_OFFSET = 5;
 const PLAYER_OVERLAY_ANIMATION = 'fade 0.3s linear';
-const REPLAY_WATCHED_THRESHOLD = 0.995;
+const REPLAY_WATCHED_THRESHOLD = 100; // milliseconds
 const TOUCH_EVENTS = ['touchstart', 'touchmove', 'touchend'];
 const MOUSE_EVENTS = ['mousedown', 'mousemove', 'mouseup'];
 
@@ -73,7 +73,7 @@ const Player = ({ resourceListRef, replay, handleOutsideClick }) => {
     const newPercentageWatched = newMarkerPosition / width;
     playAt(newPercentageWatched * totalTime.current);
     setMarkerPosition(newMarkerPosition)
-    setCurrentTime(newPercentageWatched * totalTime.current);
+    setPercentageWatched(newPercentageWatched);
     replayer.current.pause();
   }
 
@@ -161,6 +161,12 @@ const Player = ({ resourceListRef, replay, handleOutsideClick }) => {
     }
   }
 
+  const isAboveWatchedThreshold = () => {
+    if (totalTime.current !== 0)
+      return (totalTime.current - percentageWatched * totalTime.current) <= REPLAY_WATCHED_THRESHOLD;
+    return false;
+  }
+
   const handleMarkerStop = (event) => {
     if (currentlyScrubbing.current) {
       updateReplayer(event);
@@ -176,9 +182,9 @@ const Player = ({ resourceListRef, replay, handleOutsideClick }) => {
   useEffect(() => {
     handleNewPercentageWatchedOrResize();
     setCurrentTime(percentageWatched * totalTime.current);
-    if (percentageWatched >= REPLAY_WATCHED_THRESHOLD) {
+    if (isAboveWatchedThreshold()) {
       setPlayingWrapper(false);
-      setPercentageWatched(totalTime.current);
+      setPercentageWatched(1);
     }
   }, [percentageWatched]);
 
@@ -228,7 +234,7 @@ const Player = ({ resourceListRef, replay, handleOutsideClick }) => {
 
   useEffect(() => {
     if (playing) {
-      if (percentageWatched >= REPLAY_WATCHED_THRESHOLD) {
+      if (isAboveWatchedThreshold()) {
         playAt(0);
       }
       else {
