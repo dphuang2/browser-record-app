@@ -39,13 +39,17 @@ function countPageLoads(events) {
 }
 
 function filtersToMongoFilters(filters) {
-  if (!filters || filters.length === 0)
+  if (!filters || Object.keys(filters).length === 0)
     return [{ sessionId: { $exists: true } }]
-  return filters.map(filter => {
-    if (filter.value instanceof Array)
-      return availableFilters[filter.key]['mongodb'](...filter.value);
-    return availableFilters[filter.key]['mongodb'](filter.value);
-  });
+  let mongoDbFilters = [];
+  Object.keys(filters).forEach((key) => {
+    const value = filters[key];
+    if (value instanceof Array)
+      mongoDbFilters.push(availableFilters[key]['mongodb'](...value));
+    else
+      mongoDbFilters.push(availableFilters[key]['mongodb'](value));
+  })
+  return mongoDbFilters;
 }
 
 export default async (req, res) => {

@@ -19,7 +19,6 @@ import { availableFilters, disambiguateLabel, isEmpty } from '../utils/filter';
 import { sortOptions, sortOptionsMap } from '../utils/sort';
 import ReplayListItem from '../components/ReplayListItem';
 import Player from '../components/Player';
-import './index.scss';
 
 class Index extends React.Component {
 
@@ -35,16 +34,16 @@ class Index extends React.Component {
       durationFilter: null,
       shortestDuration: Number.MAX_SAFE_INTEGER,
       longestDuration: Number.MIN_SAFE_INTEGER,
+      lastFilters: {}
     };
     this.resourceListRef = React.createRef();
     this.replayMap = {};
     this.handleSortChange = this.handleSortChange.bind(this);
     this.setToastMessage = this.setToastMessage.bind(this);
     this.handleItemClick = this.handleItemClick.bind(this);
+    this.getReplays = this.getReplays.bind(this);
     this.handleOutsideClick = this.handleOutsideClick.bind(this);
     this.dismissToast = this.dismissToast.bind(this);
-    this.handleRefreshButtonClick = this.handleRefreshButtonClick.bind(this);
-    this.applyFilters = this.applyFilters.bind(this);
     this.handleClearAll = this.handleClearAll.bind(this);
     this.clearFilters = this.clearFilters.bind(this);
     this.handleRemove = this.handleRemove.bind(this);
@@ -62,7 +61,7 @@ class Index extends React.Component {
         redirect.dispatch(Redirect.Action.REMOTE, url);
       }
     }
-    this.getReplays([]);
+    this.getReplays();
   }
 
   setToastMessage(toastMessage) {
@@ -72,7 +71,8 @@ class Index extends React.Component {
     })
   }
 
-  async getReplays(filters) {
+  async getReplays() {
+    const filters = this.getFilters();
     const { shopOrigin } = this.props;
     const { loading } = this.state;
     if (loading) {
@@ -81,6 +81,7 @@ class Index extends React.Component {
     }
     this.setState({
       loading: true,
+      lastFilters: filters,
       replays: [],
     });
     try {
@@ -127,6 +128,26 @@ class Index extends React.Component {
     })
   }
 
+  getFilters() {
+    let filters = {}
+    Object.keys(availableFilters).forEach((key) => {
+      const value = this.state[key];
+      if (!isEmpty(value)) filters[key] = value;
+    })
+    return filters;
+  }
+
+  isFiltersStale() {
+    const { lastFilters } = this.state;
+    return !(JSON.stringify(this.getFilters()) === JSON.stringify(lastFilters));
+  }
+
+  handleFilterChange(key) {
+    return (value) => {
+      this.setState({ [key]: value });
+    };
+  }
+
   handleRemove(key) {
     this.setState({ [key]: null });
   }
@@ -137,32 +158,17 @@ class Index extends React.Component {
     });
   }
 
-  handleChange(key) {
-    return (value) => {
-      this.setState({ [key]: value });
-    };
-  }
-
   async clearFilters() {
     let allEmpty = true;
     Object.keys(availableFilters).forEach((key) => {
       if (!isEmpty(this.state[key])) allEmpty = false;
     })
-    if (allEmpty) {
+    if (!this.isFiltersStale() && allEmpty) {
       this.setToastMessage('All filters are cleared already');
       return;
     }
-    this.handleClearAll();
-    this.applyFilters();
-  }
-
-  async applyFilters() {
-    let filters = [];
-    Object.keys(availableFilters).forEach((key) => {
-      const value = this.state[key];
-      if (!isEmpty(value)) filters.push({ key, value })
-    })
-    await this.getReplays(filters);
+    await this.handleClearAll();
+    if (await this.isFiltersStale()) this.getReplays();
   }
 
   handleOutsideClick(event) {
@@ -187,11 +193,6 @@ class Index extends React.Component {
 
   dismissToast() {
     this.setState({ showToast: false });
-  }
-
-  handleRefreshButtonClick() {
-    const { appliedFilters } = this.state;
-    this.getReplays(appliedFilters);
   }
 
   render() {
@@ -230,12 +231,14 @@ class Index extends React.Component {
             min={shortestDuration}
             max={longestDuration}
             step={1}
-            onChange={this.handleChange('durationFilter')}
+            onChange={this.handleFilterChange('durationFilter')}
+            suffix="seconds"
           />
         ),
       },
     ]
 
+    const isFiltersStale = this.isFiltersStale();
     const filterControl = (
       <Filters
         filters={filters}
@@ -244,7 +247,9 @@ class Index extends React.Component {
       >
         <ButtonGroup segmented>
           <Button loading={loading} onClick={this.clearFilters}>Clear Filters</Button>
-          <Button loading={loading} onClick={this.applyFilters}>Apply Filters</Button>
+          <Button primary={!isFiltersStale} destructive={isFiltersStale} loading={loading} onClick={this.getReplays}>
+            Refresh
+          </Button>
         </ButtonGroup>
       </Filters>
     );
@@ -263,15 +268,6 @@ class Index extends React.Component {
             />
           )}
           <Card>
-            <div className="refresh-button">
-              <Button
-                onClick={this.handleRefreshButtonClick}
-                loading={loading}
-                primary
-              >
-                Refresh
-              </Button>
-            </div>
             <div ref={this.resourceListRef}>
               <ResourceList
                 loading={loading}

@@ -2,7 +2,7 @@
 import AWS from 'aws-sdk';
 
 import Customer from '../api/models/Customer';
-import availableFilters from './filter';
+import { availableFilters } from './filter';
 
 const API_VERSION = '2006-03-01';
 const BUCKET = 'browser-record';
@@ -50,7 +50,7 @@ async function uploadJsonToS3(data, key) {
       Body: data,
       ContentType: 'application/json',
     }).promise();
-  } catch(error) {
+  } catch (error) {
     console.error(error, error.stack);
   }
 }
@@ -76,7 +76,7 @@ async function getSignedUrl(key) {
   }
   try {
     return await s3.getSignedUrl('getObject', params);
-  } catch(error) {
+  } catch (error) {
     console.error(error, error.stack);
   }
 }
@@ -149,7 +149,7 @@ async function getSessionUrlFromS3(shop, customer, filters) {
       const data = await getObjectFromS3(content.Key);
       const parsedObject = JSON.parse(data.Body.toString());
       objects.push(parsedObject);
-    } catch(error) {
+    } catch (error) {
       getFailed = true;
     }
   }
@@ -195,9 +195,9 @@ async function getSessionUrlFromS3(shop, customer, filters) {
    * Start a delete operation for all the chunks we consumed
    */
   promises.push(deleteSessionChunks(contents.filter(content => {
-    return !content.Key.endsWith(SESSION_COMBINED_NAME); 
+    return !content.Key.endsWith(SESSION_COMBINED_NAME);
   }).map(content => {
-    return { Key: content.Key }; 
+    return { Key: content.Key };
   })));
   /**
    * Update MongoDB data for future filtering/caching during queries
@@ -216,10 +216,14 @@ async function getSessionUrlFromS3(shop, customer, filters) {
    * Apply any filters
    */
   if (filters) {
-    for (let i = 0; i < filters.length; i++) {
-      const filter = filters[i];
-      if (!availableFilters[filter.key]['functional'](filter.value)(session))
-        return undefined;
+    for (const [key, value] of Object.entries(filters)) {
+      if (value instanceof Array) {
+        if (!availableFilters[key]['functional'](...value)(session))
+          return undefined;
+      } else {
+        if (!availableFilters[key]['functional'](value)(session))
+          return undefined;
+      }
     }
   }
 
