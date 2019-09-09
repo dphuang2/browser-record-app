@@ -8,8 +8,8 @@ import connectToDatabase from '../utils/db';
 function getRemoteIp(req) {
   try {
     return req.headers['x-forwarded-for'] || req.connection.remoteAddress
-    || req.socket.remoteAddress || (req.connection.socket
-      ? req.connection.socket.remoteAddress : null);
+      || req.socket.remoteAddress || (req.connection.socket
+        ? req.connection.socket.remoteAddress : null);
   } catch (error) {
     console.error(error);
     return 'N/A';
@@ -39,7 +39,7 @@ export default async (req, res) => {
       const customer = {
         browser: agentData.browser.name,
         os: agentData.os.name,
-        isMobile: (agentData.device.type ? true : false),
+        device: (agentData.device.type ? 'mobile' : 'desktop'),
         shop: body.shop,
         sessionId: body.id,
         remoteIp,
@@ -50,9 +50,10 @@ export default async (req, res) => {
       };
       /**
        * We want to replace the existing customer document because the data
-       * could be stale and we don't want to filter in stale data
+       * could be stale and we want the stale field to be true so we don't
+       * filter based on stale metadata.
        */
-      await Customer.replaceOne({ sessionId: customer.sessionId }, customer, { upsert: true });
+      await Customer.updateOne({ sessionId: customer.sessionId }, customer, { upsert: true });
       res.status(204).send();
     }
   } catch (error) {

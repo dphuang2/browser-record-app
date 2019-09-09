@@ -207,7 +207,7 @@ async function getSessionUrlFromS3(shop, customer, filters) {
       pageLoads: session.pageLoads,
       numClicks: session.numClicks,
       timestamp: session.timestamp,
-      duration: session.duration,
+      sessionDuration: session.duration,
       stale: false,
     }
   }));
@@ -217,16 +217,10 @@ async function getSessionUrlFromS3(shop, customer, filters) {
    */
   if (filters) {
     for (const [key, value] of Object.entries(filters)) {
-      if (value instanceof Array) {
-        if (!availableFilters[key]['functional'](...value)(session))
-          return undefined;
-      } else {
-        if (!availableFilters[key]['functional'](value)(session))
-          return undefined;
-      }
+      if (!availableFilters[key]['functional'](value)(session))
+        return undefined;
     }
   }
-
   /**
    * Get signed URL for session and return that
    */

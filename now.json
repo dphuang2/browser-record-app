@@ -2,9 +2,18 @@
   "name": "browser-record-app",
   "version": 2,
   "builds": [
-    { "src": "/api/*.js", "use": "@now/node@canary" },
-    { "src": "package.json", "use": "@now/next@canary" },
-    { "src": "/assets/flags/*.svg", "use": "@now/static" }
+    {
+      "src": "/api/*.js",
+      "use": "@now/node@canary"
+    },
+    {
+      "src": "package.json",
+      "use": "@now/next@canary"
+    },
+    {
+      "src": "/assets/flags/*.svg",
+      "use": "@now/static"
+    }
   ],
   "env": {
     "MONGODB_URI": "@mongodb-uri",
@@ -18,34 +27,53 @@
     {
       "src": "/api/(sessions|customers)",
       "headers": {
-        "Access-Control-Allow-Origin": "*", "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+        "Access-Control-Allow-Origin": "*",
+        "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type"
       },
       "continue": true
     },
-    { "src": "/api/(sessions|customers)",
+    {
+      "src": "/api/(sessions|customers)",
       "status": 200,
-      "methods": ["OPTIONS"]
+      "methods": [
+        "OPTIONS"
+      ]
     },
     {
       "src": "/api/sessions/id/([0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{12})$",
       "dest": "/api/sessions.js?id=$1",
-      "methods": ["GET"]
+      "methods": [
+        "GET"
+      ]
     },
     {
-      "src": "/api/sessions/shop/(.*myshopify.com)",
+      "src": "/api/sessions/shop/(.*myshopify.com)$",
       "dest": "/api/sessions.js?shop=$1",
-      "methods": ["GET"]
+      "methods": [
+        "GET"
+      ]
+    },
+    {
+      "src": "/api/sessions/shop/(.*myshopify.com)/longestDuration$",
+      "dest": "/api/sessions.js?shop=$1&longestDuration",
+      "methods": [
+        "GET"
+      ]
     },
     {
       "src": "/api/sessions",
       "dest": "/api/sessions.js",
-      "methods": ["POST"]
+      "methods": [
+        "POST"
+      ]
     },
     {
       "src": "/api/customers",
       "dest": "/api/customers.js",
-      "methods": ["POST"]
+      "methods": [
+        "POST"
+      ]
     },
     {
       "src": "/auth",

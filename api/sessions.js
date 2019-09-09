@@ -44,10 +44,7 @@ function filtersToMongoFilters(filters) {
   let mongoDbFilters = [];
   Object.keys(filters).forEach((key) => {
     const value = filters[key];
-    if (value instanceof Array)
-      mongoDbFilters.push(availableFilters[key]['mongodb'](...value));
-    else
-      mongoDbFilters.push(availableFilters[key]['mongodb'](value));
+    mongoDbFilters.push(availableFilters[key]['mongodb'](value));
   })
   return mongoDbFilters;
 }
@@ -55,6 +52,9 @@ function filtersToMongoFilters(filters) {
 export default async (req, res) => {
   try {
     if (req.method === 'POST') {
+      /**
+       * Handle new chunk
+       */
       const parsed = JSON.parse(req.body);
       parsed.pageLoads = countPageLoads(parsed.events);
       parsed.numClicks = countNumClicks(parsed.events);
@@ -67,11 +67,14 @@ export default async (req, res) => {
         parsed.events.length
       ));
       /**
-       * Invalidate customer session data in MongoDB
+       * Invalidate customer session data in MongoDB and update session duration
        */
       await connectToDatabase(process.env.MONGODB_URI);
-      promises.push(Customer.updateOne({ id: parsed.id }, {
-        $set: { stale: true }
+      promises.push(Customer.updateOne({ sessionId: parsed.id }, {
+        $set: {
+          stale: true,
+          sessionDuration: parsed.sessionDuration
+        }
       }));
       await Promise.all(promises);
       res.status(204).send();
@@ -81,13 +84,22 @@ export default async (req, res) => {
         const token = cookies.get('token'); // JSON web token set in /api/callback
         const valid = validateToken(req.query.shop, token);
         if (valid) {
+          await connectToDatabase(process.env.MONGODB_URI);
+          if ('longestDuration' in req.query) {
+            const longestDuration = await Customer.getLongestDurationByShop(req.query.shop)
+            if (!longestDuration) {
+              res.status(204).send();
+              return;
+            }
+            res.status(200).send({ longestDuration });
+            return;
+          }
           let filters;
           try {
             filters = JSON.parse(req.query.filters);
           } catch (error) {
             // no filter defined
           }
-          await connectToDatabase(process.env.MONGODB_URI);
           const query = {
             $and: [
               { shop: req.query.shop },
@@ -98,17 +110,17 @@ export default async (req, res) => {
           };
           const customers = await Customer.find(query).sort({ timestamp: 'desc' }).limit(50).lean();
           if (customers.length === 0) {
-            res.status(404).send();
+            res.status(204).send();
             return;
           }
-          let urls = [];
           let promises = [];
+          let urls = [];
           customers.forEach((customer) => {
             const pushUrls = async () => {
               const url = await getSessionUrlFromS3(
                 req.query.shop,
                 customer,
-                filters
+                filters,
               );
               if (url) urls.push(url);
             }

@@ -8,6 +8,7 @@ import {
   Filters,
   ButtonGroup,
   RangeSlider,
+  ChoiceList,
 } from '@shopify/polaris';
 import axios from 'axios';
 import UAParser from 'ua-parser-js';
@@ -32,36 +33,50 @@ class Index extends React.Component {
       replays: [],
       sortValue: 'TIMESTAMP_DESC',
       durationFilter: null,
-      shortestDuration: Number.MAX_SAFE_INTEGER,
-      longestDuration: Number.MIN_SAFE_INTEGER,
+      deviceFilter: null,
       lastFilters: {},
     };
     this.resourceListRef = React.createRef();
     this.replayMap = {};
+    this.longestDuration = Number.MAX_SAFE_INTEGER;
     this.handleSortChange = this.handleSortChange.bind(this);
     this.setToastMessage = this.setToastMessage.bind(this);
     this.handleItemClick = this.handleItemClick.bind(this);
     this.getReplays = this.getReplays.bind(this);
     this.handleOutsideClick = this.handleOutsideClick.bind(this);
     this.dismissToast = this.dismissToast.bind(this);
-    this.handleClearAll = this.handleClearAll.bind(this);
+    this.handleClearAllFilters = this.handleClearAllFilters.bind(this);
     this.clearFilters = this.clearFilters.bind(this);
     this.handleRemove = this.handleRemove.bind(this);
   }
 
   async componentDidMount() {
+    /**
+     * Redirect mobile to direct site instead of embedded
+     */
     const app = this.context;
     const redirect = Redirect.create(app);
     if (UAParser(window.navigator.userAgent).device.type) {
       try {
         window.parent.location.href;
       } catch (error) {
+        /**
+         * We only reach here when we are in the iframe inside shopify
+         */
         const { shopOrigin } = this.props;
         const url = `${app.localOrigin}/auth?shop=${shopOrigin}`;
         redirect.dispatch(Redirect.Action.REMOTE, url);
       }
     }
+    this.getLongestDuration();
     this.getReplays();
+  }
+
+  async getLongestDuration() {
+    const { shopOrigin } = this.props;
+    const response = await axios.get(`/api/sessions/shop/${shopOrigin}/longestDuration`);
+    const { longestDuration } = response.data;
+    this.longestDuration = Math.ceil(longestDuration);
   }
 
   setToastMessage(toastMessage) {
@@ -88,20 +103,13 @@ class Index extends React.Component {
       const response = await axios.get(`/api/sessions/shop/${shopOrigin}?filters=${encodeURIComponent(JSON.stringify(filters))}`);
       const urls = response.data;
 
-
       const getReplay = async (url) => {
         const response = await axios.get(url);
         const replay = response.data;
         this.replayMap[replay.id] = replay;
-        this.setState(state => {
-          const { replays, shortestDuration, longestDuration } = state;
+        this.setState(({ replays }) => {
           replays.push(replay);
-          let finalState = { replays };
-          if (replay.duration < shortestDuration)
-            finalState.shortestDuration = Math.floor(replay.duration);
-          else if (replay.duration > longestDuration)
-            finalState.longestDuration = Math.ceil(replay.duration);
-          return finalState;
+          return { replays };
         })
       };
 
@@ -139,24 +147,23 @@ class Index extends React.Component {
     return filters;
   }
 
+  handleFilterChange = (key) => (value) => {
+    this.setState({ [key]: value });
+  };
+
   isFiltersStale() {
     const { lastFilters } = this.state;
     return !(JSON.stringify(this.getFilters()) === JSON.stringify(lastFilters));
-  }
-
-  handleFilterChange(key) {
-    return (value) => {
-      this.setState({ [key]: value });
-    };
   }
 
   handleRemove(key) {
     this.setState({ [key]: null });
   }
 
-  handleClearAll() {
+  handleClearAllFilters() {
     this.setState({
       durationFilter: null,
+      deviceFilter: null,
     });
   }
 
@@ -169,7 +176,7 @@ class Index extends React.Component {
       this.setToastMessage('All filters are cleared already');
       return;
     }
-    await this.handleClearAll();
+    await this.handleClearAllFilters();
     if (await this.isFiltersStale()) this.getReplays();
   }
 
@@ -206,8 +213,7 @@ class Index extends React.Component {
       showToast,
       toastMessage,
       durationFilter,
-      shortestDuration,
-      longestDuration,
+      deviceFilter,
     } = this.state;
 
     const appliedFilters = Object.keys(this.state)
@@ -228,15 +234,33 @@ class Index extends React.Component {
           <RangeSlider
             label="Duration of session is between"
             labelHidden
-            value={durationFilter || [shortestDuration, longestDuration]}
+            value={durationFilter || [0, this.longestDuration]}
             output
-            min={shortestDuration}
-            max={longestDuration}
+            min={0}
+            max={this.longestDuration}
             step={1}
             onChange={this.handleFilterChange('durationFilter')}
             suffix="seconds"
           />
         ),
+      },
+      {
+        key: 'deviceFilter',
+        label: 'Device',
+        filter: (
+          <ChoiceList
+            title="Device"
+            titleHidden
+            choices={[
+              { label: 'Desktop', value: 'desktop' },
+              { label: 'Mobile', value: 'mobile' },
+            ]}
+            selected={deviceFilter || []}
+            onChange={this.handleFilterChange('deviceFilter')}
+            allowMultiple
+          />
+        ),
+        shortcut: true,
       },
     ]
 
@@ -245,7 +269,7 @@ class Index extends React.Component {
       <Filters
         filters={filters}
         appliedFilters={appliedFilters}
-        onClearAll={this.handleClearAll}
+        onClearAll={this.handleClearAllFilters}
       >
         <ButtonGroup segmented>
           <Button loading={loading} onClick={this.clearFilters}>Clear Filters</Button>

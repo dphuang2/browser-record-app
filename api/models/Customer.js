@@ -10,12 +10,20 @@ const customerSchema = new Schema({
   country: String,
   shop: String,
   locationAvailable: Boolean,
-  isMobile: Boolean,
+  device: String,
+  sessionDuration: Number,
+  // Calculated at time of retrieval from S3
   pageLoads: Number,
   numClicks: Number,
   timestamp: Number,
-  duration: Number,
   stale: Boolean,
 });
+
+customerSchema.statics.getLongestDurationByShop = async function (shop) {
+  const docs = await this.find({ shop }).sort({ sessionDuration: -1 }).limit(1);
+  if (docs.length < 1) return;
+  const longestDurationCustomer = docs[0];
+  return longestDurationCustomer.sessionDuration;
+}
 
 export default avoidOverwriteModelError('Customer', customerSchema);

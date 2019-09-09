@@ -2,6 +2,8 @@ function disambiguateLabel(key, value) {
   switch (key) {
     case 'durationFilter':
       return `Duration is between ${value[0]} and ${value[1]} seconds`;
+    case 'deviceFilter':
+      return value.map((val) => `Device is ${val}`).join(', ');
     default:
       return value;
   }
@@ -16,60 +18,42 @@ function isEmpty(value) {
 }
 
 const availableFilters = {
-  durationFilterGreater: {
-    functional: (duration) => {
-      return (session) => {
-        if (session.duration > duration)
-          return true;
-        else
-          return false;
-      }
-    },
-    mongodb: (duration) => {
-      return {
-        $or: [
-          { duration: { $exists: false } },
-          { duration: { $exists: true, $gt: duration } }
-        ]
-      }
-    }
-  },
-  durationFilterLess: {
-    functional: (duration) => {
-      return (session) => {
-        if (session.duration < duration)
-          return true;
-        else
-          return false;
-      }
-    },
-    mongodb: (duration) => {
-      return {
-        $or: [
-          { duration: { $exists: false } },
-          { duration: { $exists: true, $lt: duration } }
-        ]
-      }
-    }
-  },
   durationFilter: {
-    functional: (lowerBound, upperBound) => {
+    functional: (bounds) => {
       return (session) => {
-        if (lowerBound <= session.duration && session.duration <= upperBound)
+        if (bounds[0] <= session.duration && session.duration <= bounds[1])
           return true;
         else
           return false;
       }
     },
-    mongodb: (lowerBound, upperBound) => {
+    mongodb: (bounds) => {
       return {
         $or: [
-          { duration: { $exists: false } },
-          { duration: { $exists: true, $lte: upperBound, $gte: lowerBound } }
+          /**
+           * Just in case the document doesn't have the sessionDuration field
+           */
+          { sessionDuration: { $exists: false } },
+          /**
+           * The actual filtering happens here
+           */
+          { sessionDuration: { $exists: true, $lte: bounds[1], $gte: bounds[0] } }
         ]
       }
     }
   },
+  deviceFilter: {
+    functional: (devices) => {
+      return (session) => {
+        return devices.indexOf(session.device) > -1;
+      }
+    },
+    mongodb: (devices) => {
+      return {
+        $or: devices.map((device) => { return { device }; })
+      };
+    },
+  }
 };
 
 export { disambiguateLabel, isEmpty, availableFilters };
