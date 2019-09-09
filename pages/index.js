@@ -109,6 +109,8 @@ class Index extends React.Component {
         this.replayMap[replay.id] = replay;
         this.setState(({ replays }) => {
           replays.push(replay);
+          if (replay.duration > this.longestDuration)
+            this.longestDuration = Math.ceil(replay.duration);
           return { replays };
         })
       };

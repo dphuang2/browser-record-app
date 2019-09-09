@@ -15,7 +15,7 @@ const PROGRESS_BAR_BACKGROUND = 'rgba(255,255,255,.2)';
 const STYLESHEET_TIMEOUT_DURATION = 3000; // 3 seconds to allow for stylesheets to load
 const PRECISION_OFFSET = 5;
 const PLAYER_OVERLAY_ANIMATION = 'fade 0.3s linear';
-const REPLAY_WATCHED_THRESHOLD = 100; // milliseconds
+const REPLAY_WATCHED_THRESHOLD = 200; // milliseconds
 const TOUCH_EVENTS = ['touchstart', 'touchmove', 'touchend'];
 const MOUSE_EVENTS = ['mousedown', 'mousemove', 'mouseup'];
 
