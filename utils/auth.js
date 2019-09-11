@@ -102,7 +102,7 @@ export async function getAppSubscriptionConfirmationUrl(shop, accessToken, retur
       name: "${RECURRING_CHARGE_NAME}"
       trialDays: ${trialDays}
       returnUrl: "${returnUrl}"
-      test: true
+      test: ${process.env.MODE === 'prod' ? false : true}
       lineItems: [{
         plan: {
           appRecurringPricingDetails: {
