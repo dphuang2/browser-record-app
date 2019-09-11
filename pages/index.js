@@ -12,12 +12,14 @@ import {
 } from '@shopify/polaris';
 import axios from 'axios';
 import UAParser from 'ua-parser-js';
-import { Toast, Context } from '@shopify/app-bridge-react';
+import { Toast, Context, Modal } from '@shopify/app-bridge-react';
 import { Redirect } from '@shopify/app-bridge/actions';
 import React from 'react';
+import Cookies from 'js-cookie';
 import PropTypes from 'prop-types';
 import { availableFilters, disambiguateLabel, isEmpty } from '../utils/filter';
 import { sortOptions, sortOptionsMap } from '../utils/sort';
+import { SEEN_HERO_COOKIE_KEY, HERO_TITLE, HERO_MESSAGE } from '../utils/constants';
 import ReplayListItem from '../components/ReplayListItem';
 import Player from '../components/Player';
 
@@ -85,6 +87,18 @@ class Index extends React.Component {
         return;
       }
     }
+
+    const { redirectedFromBilling } = decodedToken;
+    const showHero = redirectedFromBilling && (Cookies.get(SEEN_HERO_COOKIE_KEY) === undefined);
+    this.heroModal = showHero && (
+      <Modal
+        title={HERO_TITLE}
+        message={HERO_MESSAGE}
+        open={showHero}
+      />
+    )
+    Cookies.set(SEEN_HERO_COOKIE_KEY, 'true');
+
     this.getLongestDuration();
     this.getReplays();
   }
@@ -302,6 +316,7 @@ class Index extends React.Component {
     return (
       <Frame>
         <Page>
+          {this.heroModal}
           {showToast && (
             <Toast content={toastMessage} onDismiss={this.dismissToast} />
           )}
@@ -349,6 +364,7 @@ Index.propTypes = {
   apiKey: PropTypes.string.isRequired,
   decodedToken: PropTypes.shape({
     recurringChargeActivated: PropTypes.bool.isRequired,
+    redirectedFromBilling: PropTypes.bool.isRequired,
   }).isRequired,
 };
 Index.contextType = Context;

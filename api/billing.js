@@ -3,8 +3,10 @@ import { sign, verify } from 'jsonwebtoken';
 import {
     ACTIVATED_STATUS,
     installScriptTag,
+    createTokenObject,
     getRecurringChargeObject
 } from '../utils/auth';
+import { JSON_WEB_TOKEN_COOKIE_KEY } from '../utils/constants';
 import connectToDatabase from '../utils/db';
 import Shop from './models/Shop';
 
@@ -12,7 +14,7 @@ const { MONGODB_URI, SHOPIFY_API_SECRET_KEY } = process.env;
 
 export default async (req, res) => {
     const cookies = new Cookies(req, res);
-    const token = cookies.get('token');
+    const token = cookies.get(JSON_WEB_TOKEN_COOKIE_KEY);
     try {
         const decoded = verify(token, SHOPIFY_API_SECRET_KEY);
         const { shop, accessToken } = decoded;
@@ -52,12 +54,8 @@ export default async (req, res) => {
          * app
          */
         cookies.set(
-            'token',
-            sign({
-                shop,
-                accessToken,
-                recurringChargeActivated: true,
-            }, SHOPIFY_API_SECRET_KEY),
+            JSON_WEB_TOKEN_COOKIE_KEY,
+            sign(createTokenObject(shop, accessToken, true, true), SHOPIFY_API_SECRET_KEY),
             { overwite: true, }
         );
         res.writeHead(302, {

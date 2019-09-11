@@ -4,6 +4,7 @@ import { AppProvider } from '@shopify/polaris';
 import { parseCookies } from 'nookies';
 import { Provider } from '@shopify/app-bridge-react';
 import enTranslations from '@shopify/polaris/locales/en.json';
+import { JSON_WEB_TOKEN_COOKIE_KEY } from '../utils/constants';
 import { decodeToken, validateToken, redirect } from '../utils/auth';
 import '@shopify/polaris/styles.scss';
 
@@ -20,7 +21,7 @@ class MyApp extends App {
     const shopOrigin = ctx.query.shop;
     const authEndpoint = '/auth';
     const authUri = `${authEndpoint}?shop=${shopOrigin}`;
-    const { token } = parseCookies(ctx);
+    const token = parseCookies(ctx)[JSON_WEB_TOKEN_COOKIE_KEY];
     if (shopOrigin) {
       if (!await validateToken(token, shopOrigin)) {
         redirect(ctx.res, authUri);

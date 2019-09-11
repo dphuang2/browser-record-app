@@ -47,6 +47,15 @@ export function redirect(res, uri) {
   }
 }
 
+export function createTokenObject(shop, accessToken, recurringChargeActivated, redirectedFromBilling) {
+  return {
+    shop,
+    accessToken,
+    recurringChargeActivated,
+    redirectedFromBilling
+  }
+}
+
 function getGraphQLClient(shop, accessToken) {
   return new GraphQLClient(`https://${shop}/admin/api/2019-07/graphql.json`, {
     headers: {

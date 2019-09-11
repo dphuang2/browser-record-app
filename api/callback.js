@@ -7,9 +7,11 @@ import querystring from 'querystring';
 import {
   isSubscriptionActive,
   getAppSubscriptionConfirmationUrl,
+  createTokenObject,
   MONTHLY_CHARGE_AMOUNT,
   TRIAL_DAYS,
 } from '../utils/auth';
+import { JSON_WEB_TOKEN_COOKIE_KEY } from '../utils/constants';
 
 const { SHOPIFY_API_KEY, SHOPIFY_API_SECRET_KEY } = process.env;
 
@@ -77,12 +79,8 @@ export default async (req, res) => {
          * merchant use our app
          */
         cookies.set(
-          'token',
-          sign({
-            shop,
-            accessToken,
-            recurringChargeActivated: true,
-          }, SHOPIFY_API_SECRET_KEY),
+          JSON_WEB_TOKEN_COOKIE_KEY,
+          sign(createTokenObject(shop, accessToken, true, false), SHOPIFY_API_SECRET_KEY),
           { overwite: true, }
         );
         /**
@@ -105,15 +103,11 @@ export default async (req, res) => {
       );
       /**
        * Set cookie with shop and access token for validation when entering the
-       * app and installing it after billing
+       * app and for the installation process it after successfull billing
        */
       cookies.set(
-        'token',
-        sign({
-          shop,
-          accessToken,
-          recurringChargeActivated: false,
-        }, SHOPIFY_API_SECRET_KEY),
+        JSON_WEB_TOKEN_COOKIE_KEY,
+        sign(createTokenObject(shop, accessToken, false, false), SHOPIFY_API_SECRET_KEY),
         { overwite: true, }
       );
       /**
