@@ -82,6 +82,7 @@ class Index extends React.Component {
       }
       if (UAParser(window.navigator.userAgent).device.type) {
         redirect.dispatch(Redirect.Action.REMOTE, redirectAuthUrl);
+        return;
       }
     }
     this.getLongestDuration();
