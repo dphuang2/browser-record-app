@@ -82,6 +82,17 @@
     {
       "src": "/auth/callback",
       "dest": "/api/callback.js"
+    },
+    {
+      "src": "/auth/billing",
+      "status": 200,
+      "methods": [
+        "OPTIONS"
+      ]
+    },
+    {
+      "src": "/auth/billing",
+      "dest": "/api/billing.js"
     }
   ]
 }

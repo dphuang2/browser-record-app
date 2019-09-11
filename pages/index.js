@@ -56,16 +56,32 @@ class Index extends React.Component {
      */
     const app = this.context;
     const redirect = Redirect.create(app);
-    if (UAParser(window.navigator.userAgent).device.type) {
-      try {
-        window.parent.location.href;
-      } catch (error) {
-        /**
-         * We only reach here when we are in the iframe inside shopify
-         */
-        const { shopOrigin } = this.props;
-        const url = `${app.localOrigin}/auth?shop=${shopOrigin}`;
-        redirect.dispatch(Redirect.Action.REMOTE, url);
+    const { decodedToken, shopOrigin, apiKey } = this.props;
+    const { recurringChargeActivated } = decodedToken;
+    const redirectAuthUrl = `${app.localOrigin}/auth?shop=${shopOrigin}`;
+    try {
+      /**
+       * This is outside of shopify
+       */
+      window.parent.location.href;
+      if (!recurringChargeActivated) {
+        window.location.assign(redirectAuthUrl);
+        return;
+      }
+      if (!UAParser(window.navigator.userAgent).device.type) {
+        window.location.assign(`https://${shopOrigin}/admin/apps/${apiKey}`)
+        return;
+      }
+    } catch (error) {
+      /**
+       * We only reach here when we are in the iframe inside shopify
+       */
+      if (!recurringChargeActivated) {
+        redirect.dispatch(Redirect.Action.REMOTE, redirectAuthUrl);
+        return;
+      }
+      if (UAParser(window.navigator.userAgent).device.type) {
+        redirect.dispatch(Redirect.Action.REMOTE, redirectAuthUrl);
       }
     }
     this.getLongestDuration();
@@ -329,6 +345,10 @@ class Index extends React.Component {
 
 Index.propTypes = {
   shopOrigin: PropTypes.string.isRequired,
+  apiKey: PropTypes.string.isRequired,
+  decodedToken: PropTypes.shape({
+    recurringChargeActivated: PropTypes.bool.isRequired,
+  }).isRequired,
 };
 Index.contextType = Context;
 

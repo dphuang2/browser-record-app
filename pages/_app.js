@@ -1,10 +1,10 @@
 import React from 'react';
-import App, { Container } from 'next/app';
+import App from 'next/app';
 import { AppProvider } from '@shopify/polaris';
 import { parseCookies } from 'nookies';
 import { Provider } from '@shopify/app-bridge-react';
 import enTranslations from '@shopify/polaris/locales/en.json';
-import { validateToken, redirect } from '../utils/auth';
+import { decodeToken, validateToken, redirect } from '../utils/auth';
 import '@shopify/polaris/styles.scss';
 
 class MyApp extends App {
@@ -28,26 +28,25 @@ class MyApp extends App {
     } else {
       redirect(ctx.res, authEndpoint);
     }
+    const decodedToken = decodeToken(token);
     return {
       shopOrigin,
-      token,
       apiKey: process.env.SHOPIFY_API_KEY,
+      decodedToken,
     };
   }
 
   render() {
     const {
-      Component, pageProps, shopOrigin, apiKey,
+      Component, pageProps, shopOrigin, apiKey, decodedToken
     } = this.props;
     const config = { apiKey, shopOrigin, forceRedirect: false };
     return (
-      <Container>
-        <Provider config={config}>
-          <AppProvider i18n={enTranslations}>
-            <Component shopOrigin={shopOrigin} {...pageProps} />
-          </AppProvider>
-        </Provider>
-      </Container>
+      <Provider config={config}>
+        <AppProvider i18n={enTranslations}>
+          <Component decodedToken={decodedToken} apiKey={apiKey} shopOrigin={shopOrigin} {...pageProps} />
+        </AppProvider>
+      </Provider>
     );
   }
 }

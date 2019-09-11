@@ -4,46 +4,14 @@ import { sign } from 'jsonwebtoken';
 import axios from 'axios';
 import crypto from 'crypto';
 import querystring from 'querystring';
-import { GraphQLClient } from 'graphql-request';
+import {
+  isSubscriptionActive,
+  getAppSubscriptionConfirmationUrl,
+  MONTHLY_CHARGE_AMOUNT,
+  TRIAL_DAYS,
+} from '../utils/auth';
 
 const { SHOPIFY_API_KEY, SHOPIFY_API_SECRET_KEY } = process.env;
-const SCRIPT_TAG = 'https://cdn.jsdelivr.net/npm/browser-record/dist/br.min.js';
-
-async function installScriptTag(shop, accessToken) {
-  const client = new GraphQLClient(`https://${shop}/admin/api/2019-07/graphql.json`, {
-    headers: {
-      'X-Shopify-Access-Token': accessToken,
-    },
-  });
-
-  // Check if there is already a script tag installed
-  const query = `query {
-    scriptTags (first: 1, src: "${SCRIPT_TAG}") {
-      edges {
-        node {
-          id
-        }
-      }
-    }
-  }`;
-
-  const response = await client.request(query);
-  if (response.scriptTags.edges.length === 0) {
-    // since no script tag was installed, install one.
-    const mutation = `mutation {
-                        scriptTagCreate(input: {
-                          src: "${SCRIPT_TAG}"
-                          displayScope:ALL
-                        }) {
-                          scriptTag {
-                            id
-                          }
-                        }
-                      }`;
-    await client.request(mutation);
-  }
-}
-
 
 export default async (req, res) => {
   const {
@@ -86,6 +54,9 @@ export default async (req, res) => {
       return;
     }
 
+    /**
+     * Get access token to get recurring charge url
+     */
     const accessTokenRequestUrl = `https://${shop}/admin/oauth/access_token`;
     const accessTokenPayload = {
       client_id: SHOPIFY_API_KEY,
@@ -95,12 +66,61 @@ export default async (req, res) => {
     try {
       const response = await axios.post(accessTokenRequestUrl, accessTokenPayload);
       const accessToken = response.data.access_token;
-      await installScriptTag(shop, accessToken);
-      cookies.set('token', sign({ shop, accessToken }, SHOPIFY_API_SECRET_KEY), {
-        overwite: true,
-      });
+      /**
+       * Check if we already have a recurring charge subscription under our
+       * name. If we do find one, let the merchant use our app.
+       */
+      const subscriptionActive = await isSubscriptionActive(shop, accessToken);
+      if (subscriptionActive) {
+        /**
+         * We found the activated recurring charge so we can safely let the
+         * merchant use our app
+         */
+        cookies.set(
+          'token',
+          sign({
+            shop,
+            accessToken,
+            recurringChargeActivated: true,
+          }, SHOPIFY_API_SECRET_KEY),
+          { overwite: true, }
+        );
+        /**
+         * Redirect to the app
+         */
+        res.writeHead(302, {
+          Location: `/?shop=${shop}`,
+        });
+        res.end();
+      }
+      /**
+       * Get recurring charge url to redirect to
+       */
+      const confirmationUrl = await getAppSubscriptionConfirmationUrl(
+        shop,
+        accessToken,
+        `https://${req.headers.host}/auth/billing`,
+        MONTHLY_CHARGE_AMOUNT,
+        TRIAL_DAYS
+      );
+      /**
+       * Set cookie with shop and access token for validation when entering the
+       * app and installing it after billing
+       */
+      cookies.set(
+        'token',
+        sign({
+          shop,
+          accessToken,
+          recurringChargeActivated: false,
+        }, SHOPIFY_API_SECRET_KEY),
+        { overwite: true, }
+      );
+      /**
+       * Redirect to the recurring charge activation!
+       */
       res.writeHead(302, {
-        Location: `/?shop=${shop}`,
+        Location: confirmationUrl,
       });
       res.end();
     } catch (error) {

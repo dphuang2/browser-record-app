@@ -10,10 +10,10 @@ export default async (req, res) => {
   if (shop) {
     const state = nonce()();
     const installUrl = `https://${shop
-    }/admin/oauth/authorize?client_id=${SHOPIFY_API_KEY
-    }&scope=${SCOPES
-    }&state=${state
-    }&redirect_uri=https://${req.headers.host}/auth/callback`;
+      }/admin/oauth/authorize?client_id=${SHOPIFY_API_KEY
+      }&scope=${SCOPES
+      }&state=${state
+      }&redirect_uri=https://${req.headers.host}/auth/callback`;
 
     const cookies = new Cookies(req, res);
     cookies.set('state', state);
