@@ -17,6 +17,10 @@
     {
       "src": "/assets/privacypolicy.html",
       "use": "@now/static"
+    },
+    {
+      "src": "/assets/faq.html",
+      "use": "@now/static"
     }
   ],
   "env": {
