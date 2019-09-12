@@ -2,8 +2,7 @@ import Router from 'next/router';
 import { verify } from 'jsonwebtoken';
 import axios from 'axios';
 import { GraphQLClient } from 'graphql-request';
-// import Shop from '../api/models/Shop';
-// import connectToDatabase from './db';
+import { TEST_SHOP_DOMAIN } from './constants';
 
 const SCRIPT_TAG = 'https://cdn.jsdelivr.net/npm/browser-record/dist/br.min.js';
 const RECURRING_CHARGE_NAME = 'Rewind Recurring Plan';
@@ -102,7 +101,7 @@ export async function getAppSubscriptionConfirmationUrl(shop, accessToken, retur
       name: "${RECURRING_CHARGE_NAME}"
       trialDays: ${trialDays}
       returnUrl: "${returnUrl}"
-      test: ${process.env.MODE === 'prod' ? false : true}
+      test: ${process.env.MODE !== 'prod' || shop === TEST_SHOP_DOMAIN ? true : false}
       lineItems: [{
         plan: {
           appRecurringPricingDetails: {
