@@ -5,7 +5,6 @@ const customerSchema = new Schema({
   browser: String,
   os: String,
   sessionId: String,
-  remoteIp: String,
   region: String,
   country: String,
   shop: String,

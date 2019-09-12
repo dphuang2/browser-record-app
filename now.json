@@ -13,6 +13,10 @@
     {
       "src": "/assets/flags/*.svg",
       "use": "@now/static"
+    },
+    {
+      "src": "/assets/privacypolicy.html",
+      "use": "@now/static"
     }
   ],
   "env": {

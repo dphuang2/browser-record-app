@@ -42,7 +42,6 @@ export default async (req, res) => {
         device: (agentData.device.type ? 'mobile' : 'desktop'),
         shop: body.shop,
         sessionId: body.id,
-        remoteIp,
         region,
         country,
         locationAvailable,
