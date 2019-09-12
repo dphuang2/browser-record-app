@@ -23,7 +23,7 @@ class MyApp extends App {
     const authUri = `${authEndpoint}?shop=${shopOrigin}`;
     const token = parseCookies(ctx)[JSON_WEB_TOKEN_COOKIE_KEY];
     if (shopOrigin) {
-      if (!await validateToken(token, shopOrigin)) {
+      if (!token || !await validateToken(token, shopOrigin)) {
         redirect(ctx.res, authUri);
       }
     } else {
