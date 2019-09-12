@@ -1,17 +1,13 @@
 import nonce from 'nonce';
 import Cookies from 'cookies';
 
-const {
-  SHOPIFY_API_KEY, SCOPES,
-} = process.env;
-
 export default async (req, res) => {
   const { shop } = req.query;
   if (shop) {
     const state = nonce()();
     const installUrl = `https://${shop
-      }/admin/oauth/authorize?client_id=${SHOPIFY_API_KEY
-      }&scope=${SCOPES
+      }/admin/oauth/authorize?client_id=${process.env.SHOPIFY_API_KEY
+      }&scope=${process.env.SCOPES
       }&state=${state
       }&redirect_uri=https://${req.headers.host}/auth/callback`;
 
