@@ -166,6 +166,12 @@ class Index extends React.Component {
               loading: false,
             })
             return;
+          case 401:
+            this.setState({
+              loading: false,
+            });
+            this.setToastMessage('You are not authorized');
+            return;
         }
       }
     }

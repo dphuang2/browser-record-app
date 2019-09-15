@@ -82,7 +82,7 @@ export default async (req, res) => {
       if (req.query.shop) {
         const cookies = new Cookies(req, res);
         const token = cookies.get('token'); // JSON web token set in /api/callback
-        const valid = validateToken(req.query.shop, token);
+        const valid = await validateToken(token, req.query.shop);
         if (valid) {
           await connectToDatabase(process.env.MONGODB_URI);
           if ('longestDuration' in req.query) {
