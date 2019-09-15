@@ -62,10 +62,11 @@ class Index extends React.Component {
     const { recurringChargeActivated } = decodedToken;
     const redirectAuthUrl = `${app.localOrigin}/auth?shop=${shopOrigin}`;
     try {
+      // This is the test that determines if we are inside shopify
+      window.parent.location.href;
       /**
        * This is outside of shopify
        */
-      window.parent.location.href;
       if (!recurringChargeActivated) {
         window.location.assign(redirectAuthUrl);
         return;
@@ -76,7 +77,7 @@ class Index extends React.Component {
       }
     } catch (error) {
       /**
-       * We only reach here when we are in the iframe inside shopify
+       * This is inside shopify
        */
       if (!recurringChargeActivated) {
         redirect.dispatch(Redirect.Action.REMOTE, redirectAuthUrl);
