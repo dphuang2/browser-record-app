@@ -1,3 +1,4 @@
+/* eslint-disable jsx-a11y/anchor-is-valid */
 /* eslint-disable react/destructuring-assignment */
 import {
   ResourceList,
@@ -9,6 +10,7 @@ import {
   ButtonGroup,
   RangeSlider,
   ChoiceList,
+  Link,
 } from '@shopify/polaris';
 import axios from 'axios';
 import UAParser from 'ua-parser-js';
@@ -335,6 +337,9 @@ class Index extends React.Component {
             />
           )}
           <Card>
+            <div className="support">
+              <Link external url="/static/faq.html"> Support </Link>
+            </div>
             <div ref={this.resourceListRef}>
               <ResourceList
                 loading={loading}
@@ -351,6 +356,11 @@ class Index extends React.Component {
           </Card>
           <style jsx global>
             {`
+            .support {
+              text-align: right;
+              padding-top: 1.6rem;
+              padding-right: 1.6rem;
+            }
             .Polaris-Filters-ConnectedFilterControl__MoreFiltersButtonContainer .Polaris-Button {
               border-top-left-radius: 3px !important;
               border-bottom-left-radius: 3px !important;
