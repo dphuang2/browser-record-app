@@ -3,6 +3,8 @@ import {
 } from '@shopify/polaris';
 import PropTypes from 'prop-types';
 
+const FLAG_IMG_FOLDER = '/static/flags/';
+
 function durationStringFromSeconds(seconds) {
   let days = Math.floor(seconds / 86400);
   let hours = Math.floor((seconds % 86400) / 3600);
@@ -58,7 +60,7 @@ const ReplayListItem = function mrl(props) {
       if (region)
         locationString = `${region}, ${country}`;
     }
-    media = <Avatar customer size="medium" name={locationString} source={`/assets/flags/${country.toLowerCase()}.svg`} />;
+    media = <Avatar customer size="medium" name={locationString} source={`${FLAG_IMG_FOLDER}${country.toLowerCase()}.svg`} />;
   } else {
     media = <Avatar customer size="medium" name={locationString} />;
   }
