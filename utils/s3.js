@@ -5,7 +5,7 @@ import Customer from '../api/models/Customer';
 import { availableFilters } from './filter';
 
 const API_VERSION = '2006-03-01';
-const BUCKET = 'browser-record';
+const BUCKET = 'rewind-app';
 const REGION = 'us-west-1';
 const SESSION_COMBINED_NAME = 'combined';
 

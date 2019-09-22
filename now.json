@@ -31,11 +31,6 @@
       "continue": true
     },
     {
-      "src": "(/shop/redact|/customers/(redact|data_request))",
-      "status": 200,
-      "dest": "/api/gdpr.js"
-    },
-    {
       "src": "/api/(sessions|customers)",
       "status": 200,
       "methods": [
@@ -95,6 +90,11 @@
     {
       "src": "/auth/billing",
       "dest": "/api/billing.js"
+    },
+    {
+      "src": "(/shop/redact|/customers/(redact|data_request))",
+      "status": 200,
+      "dest": "/api/gdpr.js"
     }
   ]
 }
