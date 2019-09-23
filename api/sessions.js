@@ -2,7 +2,7 @@
 import Cookies from 'cookies';
 import Customer from './models/Customer';
 import connectToDatabase from '../utils/db';
-import { availableFilters } from '../utils/filter';
+import { availableFilters, nullFilter, DEFAULT_NUM_REPLAYS_TO_SHOW } from '../utils/filter';
 import { validateToken } from '../utils/auth';
 import { uploadSessionChunkToS3, getSessionUrlFromS3 } from '../utils/s3';
 
@@ -40,12 +40,15 @@ function countPageLoads(events) {
 
 function filtersToMongoFilters(filters) {
   if (!filters || Object.keys(filters).length === 0)
-    return [{ sessionId: { $exists: true } }]
+    return nullFilter;
   let mongoDbFilters = [];
   Object.keys(filters).forEach((key) => {
     const value = filters[key];
-    mongoDbFilters.push(availableFilters[key]['mongodb'](value));
+    if (availableFilters[key] != null)
+      mongoDbFilters.push(availableFilters[key]['mongodb'](value));
   })
+  if (mongoDbFilters.length === 0)
+    return nullFilter;
   return mongoDbFilters;
 }
 
@@ -108,7 +111,8 @@ export default async (req, res) => {
               }
             ]
           };
-          const customers = await Customer.find(query).sort({ timestamp: 'desc' }).limit(50).lean();
+          const numReplaysToShow = filters.numReplaysToShow != null ? filters.numReplaysToShow : DEFAULT_NUM_REPLAYS_TO_SHOW;
+          const customers = await Customer.find(query).sort({ timestamp: 'desc' }).limit(numReplaysToShow).lean();
           if (customers.length === 0) {
             res.status(204).send();
             return;

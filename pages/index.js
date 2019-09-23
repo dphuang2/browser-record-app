@@ -19,7 +19,7 @@ import { Redirect } from '@shopify/app-bridge/actions';
 import React from 'react';
 import Cookies from 'js-cookie';
 import PropTypes from 'prop-types';
-import { availableFilters, disambiguateLabel, isEmpty } from '../utils/filter';
+import { availableFilters, disambiguateLabel, defaultFilterMap } from '../utils/filter';
 import { sortOptions, sortOptionsMap } from '../utils/sort';
 import { SEEN_HERO_COOKIE_KEY, HERO_TITLE, HERO_MESSAGE } from '../utils/constants';
 import ReplayListItem from '../components/ReplayListItem';
@@ -36,8 +36,9 @@ class Index extends React.Component {
       currentReplay: undefined,
       replays: [],
       sortValue: 'TIMESTAMP_DESC',
-      durationFilter: null,
-      deviceFilter: null,
+      durationFilter: availableFilters.durationFilter.defaultValue,
+      deviceFilter: availableFilters.deviceFilter.defaultValue,
+      numReplaysToShow: availableFilters.numReplaysToShow.defaultValue,
       lastFilters: {},
     };
     this.resourceListRef = React.createRef();
@@ -52,6 +53,8 @@ class Index extends React.Component {
     this.handleClearAllFilters = this.handleClearAllFilters.bind(this);
     this.clearFilters = this.clearFilters.bind(this);
     this.handleRemove = this.handleRemove.bind(this);
+    this.areAllFiltersDefault = this.areAllFiltersDefault.bind(this);
+    this.isFilterDefault = this.isFilterDefault.bind(this);
   }
 
   async componentDidMount() {
@@ -184,7 +187,7 @@ class Index extends React.Component {
     let filters = {}
     Object.keys(availableFilters).forEach((key) => {
       const value = this.state[key];
-      if (!isEmpty(value)) filters[key] = value;
+      if (!this.isFilterDefault(key)) filters[key] = value;
     })
     return filters;
   }
@@ -193,33 +196,44 @@ class Index extends React.Component {
     this.setState({ [key]: value });
   };
 
-  isFiltersStale() {
+  /**
+   * This function checks if the current applied filters (the ones that show up
+   * in the UI) reflect the filters used to get the current set of replays.
+   */
+  areFiltersStale() {
     const { lastFilters } = this.state;
     return !(JSON.stringify(this.getFilters()) === JSON.stringify(lastFilters));
   }
 
-  handleRemove(key) {
-    this.setState({ [key]: null });
+  isFilterDefault(filter) {
+    return this.state[filter] === availableFilters[filter].defaultValue;
   }
 
-  handleClearAllFilters() {
-    this.setState({
-      durationFilter: null,
-      deviceFilter: null,
-    });
+  areAllFiltersDefault() {
+    let allDefault = true;
+    Object.keys(availableFilters).forEach((key) => {
+      if (!this.isFilterDefault(key))
+        allDefault = false;
+    })
+    return allDefault;
+  }
+
+  handleRemove(key) {
+    this.setState({ [key]: availableFilters[key].defaultValue });
+  }
+
+  async handleClearAllFilters() {
+    await this.setState(defaultFilterMap());
   }
 
   async clearFilters() {
-    let allEmpty = true;
-    Object.keys(availableFilters).forEach((key) => {
-      if (!isEmpty(this.state[key])) allEmpty = false;
-    })
-    if (!this.isFiltersStale() && allEmpty) {
+    if (!this.areFiltersStale() && this.areAllFiltersDefault()) {
       this.setToastMessage('All filters are cleared already');
       return;
     }
     await this.handleClearAllFilters();
-    if (await this.isFiltersStale()) this.getReplays();
+    if (this.areFiltersStale())
+      this.getReplays();
   }
 
   handleOutsideClick(event) {
@@ -255,11 +269,12 @@ class Index extends React.Component {
       showToast,
       toastMessage,
       durationFilter,
+      numReplaysToShow,
       deviceFilter,
     } = this.state;
 
     const appliedFilters = Object.keys(this.state)
-      .filter((key) => !isEmpty(this.state[key]) && key in availableFilters)
+      .filter((key) => key in availableFilters && !this.isFilterDefault(key))
       .map((key) => {
         return {
           key,
@@ -304,9 +319,26 @@ class Index extends React.Component {
         ),
         shortcut: true,
       },
+      {
+        key: 'numReplaysToShow',
+        label: 'Maximum number of replays to show',
+        filter: (
+          <RangeSlider
+            label="Maximum number of replays to show"
+            labelHidden
+            value={numReplaysToShow}
+            output
+            min={0}
+            max={200}
+            step={1}
+            onChange={this.handleFilterChange('numReplaysToShow')}
+            suffix="replays"
+          />
+        ),
+      },
     ]
 
-    const isFiltersStale = this.isFiltersStale();
+    const areFiltersStale = this.areFiltersStale();
     const filterControl = (
       <Filters
         filters={filters}
@@ -315,7 +347,7 @@ class Index extends React.Component {
       >
         <ButtonGroup segmented>
           <Button loading={loading} onClick={this.clearFilters}>Clear Filters</Button>
-          <Button primary={!isFiltersStale} destructive={isFiltersStale} loading={loading} onClick={this.getReplays}>
+          <Button primary={!areFiltersStale} destructive={areFiltersStale} loading={loading} onClick={this.getReplays}>
             Refresh
           </Button>
         </ButtonGroup>

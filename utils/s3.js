@@ -217,7 +217,7 @@ async function getSessionUrlFromS3(shop, customer, filters) {
    */
   if (filters) {
     for (const [key, value] of Object.entries(filters)) {
-      if (!availableFilters[key]['functional'](value)(session))
+      if (availableFilters[key] != null && !availableFilters[key]['functional'](value)(session))
         return undefined;
     }
   }
