@@ -52,13 +52,6 @@
       ]
     },
     {
-      "src": "/api/sessions/shop/(.*myshopify.com)/longestDuration$",
-      "dest": "/api/sessions.js?shop=$1&longestDuration",
-      "methods": [
-        "GET"
-      ]
-    },
-    {
       "src": "/api/sessions",
       "dest": "/api/sessions.js",
       "methods": [

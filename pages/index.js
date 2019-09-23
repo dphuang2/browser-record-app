@@ -105,15 +105,7 @@ class Index extends React.Component {
     )
     Cookies.set(SEEN_HERO_COOKIE_KEY, 'true');
 
-    this.getLongestDuration();
     this.getReplays();
-  }
-
-  async getLongestDuration() {
-    const { shopOrigin } = this.props;
-    const response = await axios.get(`/api/sessions/shop/${shopOrigin}/longestDuration`);
-    const { longestDuration } = response.data;
-    this.longestDuration = Math.ceil(longestDuration);
   }
 
   setToastMessage(toastMessage) {
@@ -138,7 +130,8 @@ class Index extends React.Component {
     });
     try {
       const response = await axios.get(`/api/sessions/shop/${shopOrigin}?filters=${encodeURIComponent(JSON.stringify(filters))}`);
-      const urls = response.data;
+      const { urls, longestDuration } = response.data;
+      this.longestDuration = Math.ceil(longestDuration);
 
       const getReplay = async (url) => {
         const response = await axios.get(url);

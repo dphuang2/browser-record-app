@@ -52,6 +52,13 @@ function filtersToMongoFilters(filters) {
   return mongoDbFilters;
 }
 
+function generateResponse(urls, longestDuration) {
+  return {
+    urls,
+    longestDuration
+  };
+}
+
 export default async (req, res) => {
   try {
     if (req.method === 'POST') {
@@ -88,15 +95,7 @@ export default async (req, res) => {
         const valid = await validateToken(token, req.query.shop);
         if (valid) {
           await connectToDatabase(process.env.MONGODB_URI);
-          if ('longestDuration' in req.query) {
-            const longestDuration = await Customer.getLongestDurationByShop(req.query.shop)
-            if (!longestDuration) {
-              res.status(204).send();
-              return;
-            }
-            res.status(200).send({ longestDuration });
-            return;
-          }
+          const longestDuration = await Customer.getLongestDurationByShop(req.query.shop)
           let filters;
           try {
             filters = JSON.parse(req.query.filters);
@@ -133,7 +132,7 @@ export default async (req, res) => {
             );
           });
           await Promise.all(promises);
-          res.status(200).send(urls);
+          res.status(200).send(generateResponse(urls, longestDuration));
         } else {
           res.status(401).send();
         }
