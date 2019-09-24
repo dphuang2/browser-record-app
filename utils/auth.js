@@ -6,7 +6,7 @@ import { TEST_SHOP_DOMAIN } from './constants';
 
 const SCRIPT_TAG = 'https://cdn.jsdelivr.net/npm/browser-record/dist/br.min.js';
 const RECURRING_CHARGE_NAME = 'Rewind Recurring Plan';
-export const MONTHLY_CHARGE_AMOUNT = 6.0;
+export const MONTHLY_CHARGE_AMOUNT = 10.0;
 export const TRIAL_DAYS = 7;
 export const ACTIVATED_STATUS = 'ACTIVE';
 
