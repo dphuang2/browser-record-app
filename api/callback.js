@@ -90,6 +90,7 @@ export default async (req, res) => {
           Location: `/?shop=${shop}`,
         });
         res.end();
+        return;
       }
       /**
        * Get recurring charge url to redirect to
