@@ -278,6 +278,23 @@ class Index extends React.Component {
 
     const filters = [
       {
+        key: 'numReplaysToShow',
+        label: 'Maximum number of replays to show',
+        filter: (
+          <RangeSlider
+            label="Maximum number of replays to show"
+            labelHidden
+            value={numReplaysToShow}
+            output
+            min={0}
+            max={200}
+            step={1}
+            onChange={this.handleFilterChange('numReplaysToShow')}
+            suffix="replays"
+          />
+        ),
+      },
+      {
         key: 'durationFilter',
         label: 'Duration between',
         filter: (
@@ -311,23 +328,6 @@ class Index extends React.Component {
           />
         ),
         shortcut: true,
-      },
-      {
-        key: 'numReplaysToShow',
-        label: 'Maximum number of replays to show',
-        filter: (
-          <RangeSlider
-            label="Maximum number of replays to show"
-            labelHidden
-            value={numReplaysToShow}
-            output
-            min={0}
-            max={200}
-            step={1}
-            onChange={this.handleFilterChange('numReplaysToShow')}
-            suffix="replays"
-          />
-        ),
       },
     ]
 
