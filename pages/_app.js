@@ -23,12 +23,18 @@ class MyApp extends App {
     const authUri = `${authEndpoint}?shop=${shopOrigin}`;
     const token = parseCookies(ctx)[JSON_WEB_TOKEN_COOKIE_KEY];
     if (shopOrigin) {
+      console.log('test1: ', token);
       if (!token || !await validateToken(token, shopOrigin)) {
+        console.log('test1.5');
         redirect(ctx.res, authUri);
+        return;
       }
+      console.log('test2');
     } else {
+      console.log('test3');
       redirect(ctx.res, authEndpoint);
     }
+    console.log('test4');
     const decodedToken = decodeToken(token);
     return {
       shopOrigin,
