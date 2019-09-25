@@ -11,7 +11,13 @@ import {
   MONTHLY_CHARGE_AMOUNT,
   TRIAL_DAYS,
 } from '../utils/auth';
-import { JSON_WEB_TOKEN_COOKIE_KEY } from '../utils/constants';
+import {
+  JSON_WEB_TOKEN_COOKIE_KEY,
+  HTTP_FORBIDDEN,
+  HTTP_BAD_REQUEST,
+  HTTP_FOUND,
+  HTTP_INTERNAL_SERVER_ERROR,
+} from '../utils/constants';
 
 const { SHOPIFY_API_KEY, SHOPIFY_API_SECRET_KEY } = process.env;
 
@@ -23,7 +29,7 @@ export default async (req, res) => {
   const stateCookie = cookies.get('state');
 
   if (state !== stateCookie) {
-    res.status(403).send('Request origin cannot be verified');
+    res.status(HTTP_FORBIDDEN).send('Request origin cannot be verified');
     return;
   }
 
@@ -52,7 +58,7 @@ export default async (req, res) => {
     }
 
     if (!hashEquals) {
-      res.status(400).send('HMAC validation failed');
+      res.status(HTTP_BAD_REQUEST).send('HMAC validation failed');
       return;
     }
 
@@ -86,7 +92,7 @@ export default async (req, res) => {
         /**
          * Redirect to the app
          */
-        res.writeHead(302, {
+        res.writeHead(HTTP_FOUND, {
           Location: `/?shop=${shop}`,
         });
         res.end();
@@ -114,15 +120,15 @@ export default async (req, res) => {
       /**
        * Redirect to the recurring charge activation!
        */
-      res.writeHead(302, {
+      res.writeHead(HTTP_FOUND, {
         Location: confirmationUrl,
       });
       res.end();
     } catch (error) {
       console.error(error);
-      res.status(500).send();
+      res.status(HTTP_INTERNAL_SERVER_ERROR).send();
     }
   } else {
-    res.status(400).send('Required parameters missing');
+    res.status(HTTP_BAD_REQUEST).send('Required parameters missing');
   }
 };

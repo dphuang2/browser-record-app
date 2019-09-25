@@ -3,6 +3,10 @@ import UAParser from 'ua-parser-js';
 import geoip from 'geoip-lite';
 import Customer from './models/Customer';
 import connectToDatabase from '../utils/db';
+import {
+  HTTP_NO_CONTENT,
+  HTTP_INTERNAL_SERVER_ERROR
+} from '../utils/constants';
 
 // https://stackoverflow.com/a/19524949
 function getRemoteIp(req) {
@@ -31,7 +35,7 @@ function getRegionAndCountry(remoteIp) {
 export default async (req, res) => {
   try {
     if (req.method === 'POST') {
-      await connectToDatabase(process.env.MONGODB_URI);
+      await connectToDatabase(process.env.MONGODB_URL);
       const agentData = UAParser(req.headers['user-agent']);
       const remoteIp = getRemoteIp(req);
       const body = JSON.parse(req.body);
@@ -53,10 +57,10 @@ export default async (req, res) => {
        * filter based on stale metadata.
        */
       await Customer.updateOne({ sessionId: customer.sessionId }, customer, { upsert: true });
-      res.status(204).send();
+      res.status(HTTP_NO_CONTENT).send();
     }
   } catch (error) {
     console.error(error);
-    res.status(500).send();
+    res.status(HTTP_INTERNAL_SERVER_ERROR).send();
   }
 };

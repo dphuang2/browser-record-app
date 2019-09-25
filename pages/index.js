@@ -17,11 +17,17 @@ import UAParser from 'ua-parser-js';
 import { Toast, Context, Modal } from '@shopify/app-bridge-react';
 import { Redirect } from '@shopify/app-bridge/actions';
 import React from 'react';
-import Cookies from 'js-cookie';
 import PropTypes from 'prop-types';
 import { availableFilters, disambiguateLabel, defaultFilterMap } from '../utils/filter';
 import { sortOptions, sortOptionsMap } from '../utils/sort';
-import { SEEN_HERO_COOKIE_KEY, HERO_TITLE, HERO_MESSAGE } from '../utils/constants';
+import {
+  HERO_TITLE,
+  HERO_MESSAGE,
+  HTTP_NOT_FOUND,
+  HTTP_UNAUTHORIZED,
+  UNAUTHORIZED_TOAST,
+  NO_REPLAYS_FOUND_TOAST,
+} from '../utils/constants';
 import ReplayListItem from '../components/ReplayListItem';
 import Player from '../components/Player';
 
@@ -94,8 +100,8 @@ class Index extends React.Component {
       }
     }
 
-    const { redirectedFromBilling } = decodedToken;
-    const showHero = redirectedFromBilling && (Cookies.get(SEEN_HERO_COOKIE_KEY) === undefined);
+    const { redirectedFromBilling, visitCount } = decodedToken;
+    const showHero = redirectedFromBilling && visitCount == 1;
     this.heroModal = showHero && (
       <Modal
         title={HERO_TITLE}
@@ -103,7 +109,6 @@ class Index extends React.Component {
         open={showHero}
       />
     )
-    Cookies.set(SEEN_HERO_COOKIE_KEY, 'true');
 
     this.getReplays();
   }
@@ -160,16 +165,17 @@ class Index extends React.Component {
     } catch (error) {
       if (error.response) {
         switch (error.response.status) {
-          case 404:
+          case HTTP_NOT_FOUND:
             this.setState({
               loading: false,
             })
+            this.setToastMessage(NO_REPLAYS_FOUND_TOAST);
             return;
-          case 401:
+          case HTTP_UNAUTHORIZED:
             this.setState({
               loading: false,
             });
-            this.setToastMessage('You are not authorized');
+            this.setToastMessage(UNAUTHORIZED_TOAST);
             return;
         }
       }
@@ -407,6 +413,7 @@ Index.propTypes = {
   decodedToken: PropTypes.shape({
     recurringChargeActivated: PropTypes.bool.isRequired,
     redirectedFromBilling: PropTypes.bool.isRequired,
+    visitCount: PropTypes.number.isRequired,
   }).isRequired,
 };
 Index.contextType = Context;

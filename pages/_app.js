@@ -1,12 +1,16 @@
 import React from 'react';
 import App from 'next/app';
 import { AppProvider } from '@shopify/polaris';
-import { parseCookies } from 'nookies';
+import { setCookie, parseCookies } from 'nookies';
+import { sign } from 'jsonwebtoken';
 import { Provider } from '@shopify/app-bridge-react';
 import enTranslations from '@shopify/polaris/locales/en.json';
 import { JSON_WEB_TOKEN_COOKIE_KEY } from '../utils/constants';
-import { decodeToken, validateToken, redirect } from '../utils/auth';
+import { isTokenValid, redirect, createTokenObject } from '../utils/auth';
 import '@shopify/polaris/styles.scss';
+
+
+const { SHOPIFY_API_SECRET_KEY } = process.env;
 
 class MyApp extends App {
 
@@ -18,24 +22,34 @@ class MyApp extends App {
     // if the shop parameter matches the one claimed in the query string of the
     // URI. If any of these conditions are not met, redirect user to the proper
     // authorization URI.
-    const shopOrigin = ctx.query.shop;
     const authEndpoint = '/auth';
+    const shopOrigin = ctx.query.shop;
+    if (!shopOrigin) {
+      redirect(ctx.res, authEndpoint);
+      return;
+    }
     const authUri = `${authEndpoint}?shop=${shopOrigin}`;
     const token = parseCookies(ctx)[JSON_WEB_TOKEN_COOKIE_KEY];
-    if (shopOrigin) {
-      console.log('test1: ', token);
-      if (!token || !await validateToken(token, shopOrigin)) {
-        console.log('test1.5');
-        redirect(ctx.res, authUri);
-        return;
-      }
-      console.log('test2');
-    } else {
-      console.log('test3');
-      redirect(ctx.res, authEndpoint);
+    if (!token) {
+      redirect(ctx.res, authUri);
+      return;
     }
-    console.log('test4');
-    const decodedToken = decodeToken(token);
+    const { tokenVerified, decodedToken } = await isTokenValid(token, shopOrigin);
+    if (!tokenVerified) {
+      redirect(ctx.res, authUri);
+      return;
+    }
+    const jwt = sign(
+      createTokenObject(
+        decodedToken.shop,
+        decodedToken.accessToken,
+        decodedToken.recurringChargeActivated,
+        decodedToken.redirectedFromBilling,
+        decodedToken.visitCount + 1
+      ),
+      SHOPIFY_API_SECRET_KEY,
+    );
+    setCookie(ctx, JSON_WEB_TOKEN_COOKIE_KEY, jwt);
     return {
       shopOrigin,
       apiKey: process.env.SHOPIFY_API_KEY,

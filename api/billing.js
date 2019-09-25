@@ -6,11 +6,14 @@ import {
     createTokenObject,
     getRecurringChargeObject
 } from '../utils/auth';
-import { JSON_WEB_TOKEN_COOKIE_KEY } from '../utils/constants';
+import {
+    JSON_WEB_TOKEN_COOKIE_KEY,
+    HTTP_FOUND
+} from '../utils/constants';
 import connectToDatabase from '../utils/db';
 import Shop from './models/Shop';
 
-const { MONGODB_URI, SHOPIFY_API_SECRET_KEY } = process.env;
+const { MONGODB_URL, SHOPIFY_API_SECRET_KEY } = process.env;
 
 export default async (req, res) => {
     const cookies = new Cookies(req, res);
@@ -31,7 +34,7 @@ export default async (req, res) => {
          * Handle inactive recurring charge by redirecting to beginning of auth flow
          */
         if (status !== ACTIVATED_STATUS) {
-            res.writeHead(302, {
+            res.writeHead(HTTP_FOUND, {
                 Location: `/?shop=${shop}`,
             });
             res.end();
@@ -40,7 +43,7 @@ export default async (req, res) => {
         /**
          * Persist this recurring charge in db
          */
-        await connectToDatabase(MONGODB_URI);
+        await connectToDatabase(MONGODB_URL);
         await Shop.updateOne({ shop }, {
             shop,
             appSubscriptionId: req.query.charge_id
@@ -58,12 +61,12 @@ export default async (req, res) => {
             sign(createTokenObject(shop, accessToken, true, true), SHOPIFY_API_SECRET_KEY),
             { overwite: true, }
         );
-        res.writeHead(302, {
+        res.writeHead(HTTP_FOUND, {
             Location: `/?shop=${shop}`,
         });
         res.end();
     } catch (error) {
-        res.writeHead(302, {
+        res.writeHead(HTTP_FOUND, {
             Location: '/',
         });
         res.end();

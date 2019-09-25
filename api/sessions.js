@@ -3,8 +3,16 @@ import Cookies from 'cookies';
 import Customer from './models/Customer';
 import connectToDatabase from '../utils/db';
 import { availableFilters, nullFilter, DEFAULT_NUM_REPLAYS_TO_SHOW } from '../utils/filter';
-import { validateToken } from '../utils/auth';
+import { isTokenValid } from '../utils/auth';
 import { uploadSessionChunkToS3, getSessionUrlFromS3 } from '../utils/s3';
+import {
+  HTTP_IM_A_TEAPOT,
+  HTTP_INTERNAL_SERVER_ERROR,
+  HTTP_OK,
+  HTTP_UNAUTHORIZED,
+  HTTP_NOT_FOUND,
+  HTTP_NO_CONTENT
+} from '../utils/constants';
 
 function countNumClicks(events) {
   // Count the number of clicks.
@@ -79,7 +87,7 @@ export default async (req, res) => {
       /**
        * Invalidate customer session data in MongoDB and update session duration
        */
-      await connectToDatabase(process.env.MONGODB_URI);
+      await connectToDatabase(process.env.MONGODB_URL);
       promises.push(Customer.updateOne({ sessionId: parsed.id }, {
         $set: {
           stale: true,
@@ -87,15 +95,19 @@ export default async (req, res) => {
         }
       }));
       await Promise.all(promises);
-      res.status(204).send();
+      res.status(HTTP_NO_CONTENT).send();
     } else if (req.method === 'GET') {
       if (req.query.shop) {
         const cookies = new Cookies(req, res);
         const token = cookies.get('token'); // JSON web token set in /api/callback
-        const valid = await validateToken(token, req.query.shop);
-        if (valid) {
-          await connectToDatabase(process.env.MONGODB_URI);
+        const { tokenVerified } = await isTokenValid(token, req.query.shop);
+        if (tokenVerified) {
+          await connectToDatabase(process.env.MONGODB_URL);
           const longestDuration = await Customer.getLongestDurationByShop(req.query.shop)
+          if (longestDuration === undefined) {
+            res.status(HTTP_NOT_FOUND).send();
+            return;
+          }
           let filters;
           try {
             filters = JSON.parse(req.query.filters);
@@ -113,7 +125,7 @@ export default async (req, res) => {
           const numReplaysToShow = filters.numReplaysToShow != null ? filters.numReplaysToShow : DEFAULT_NUM_REPLAYS_TO_SHOW;
           const customers = await Customer.find(query).sort({ timestamp: 'desc' }).limit(numReplaysToShow).lean();
           if (customers.length === 0) {
-            res.status(204).send();
+            res.status(HTTP_NOT_FOUND).send();
             return;
           }
           let promises = [];
@@ -132,16 +144,16 @@ export default async (req, res) => {
             );
           });
           await Promise.all(promises);
-          res.status(200).send(generateResponse(urls, longestDuration));
+          res.status(HTTP_OK).send(generateResponse(urls, longestDuration));
         } else {
-          res.status(401).send();
+          res.status(HTTP_UNAUTHORIZED).send();
         }
       }
     } else {
-      res.status(418).send();
+      res.status(HTTP_IM_A_TEAPOT).send();
     }
   } catch (error) {
     console.error(error, error.stack);
-    res.status(500).send();
+    res.status(HTTP_INTERNAL_SERVER_ERROR).send();
   }
 };

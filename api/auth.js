@@ -1,5 +1,9 @@
 import nonce from 'nonce';
 import Cookies from 'cookies';
+import {
+  HTTP_FOUND,
+  HTTP_BAD_REQUEST
+} from '../utils/constants';
 
 export default async (req, res) => {
   const { shop } = req.query;
@@ -13,11 +17,11 @@ export default async (req, res) => {
 
     const cookies = new Cookies(req, res);
     cookies.set('state', state);
-    res.writeHead(302, {
+    res.writeHead(HTTP_FOUND, {
       Location: installUrl,
     });
     res.end();
     return;
   }
-  res.status(400).send('Missing shop parameter. Please add ?shop=your-development-shop.myshopify.com to your request');
+  res.status(HTTP_BAD_REQUEST).send('Missing shop parameter. Please add ?shop=your-development-shop.myshopify.com to your request');
 };

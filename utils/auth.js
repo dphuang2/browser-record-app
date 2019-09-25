@@ -24,15 +24,16 @@ export function decodeToken(token) {
   return verify(token, process.env.SHOPIFY_API_SECRET_KEY);
 }
 
-export async function validateToken(token, shop) {
+export async function isTokenValid(token, shop) {
   let tokenVerified = false;
+  let decodedToken;
   try {
-    const decoded = decodeToken(token);
-    tokenVerified = decoded.shop === shop && await validateAccessToken(shop, decoded.accessToken);
+    decodedToken = decodeToken(token);
+    tokenVerified = decodedToken.shop === shop && await validateAccessToken(shop, decodedToken.accessToken);
   } catch (error) {
     tokenVerified = false;
   }
-  return tokenVerified;
+  return { tokenVerified, decodedToken };
 }
 
 export function redirect(res, uri) {
@@ -46,12 +47,13 @@ export function redirect(res, uri) {
   }
 }
 
-export function createTokenObject(shop, accessToken, recurringChargeActivated, redirectedFromBilling) {
+export function createTokenObject(shop, accessToken, recurringChargeActivated, redirectedFromBilling, visitCount) {
   return {
     shop,
     accessToken,
     recurringChargeActivated,
-    redirectedFromBilling
+    redirectedFromBilling,
+    visitCount: visitCount == null ? 0 : visitCount,
   }
 }
 
