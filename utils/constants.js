@@ -1,4 +1,4 @@
-export const APP_NAME = 'Rewind';
+export const APP_NAME = 'Loopr';
 export const HERO_TITLE = 'Success! 🎉';
 export const HERO_MESSAGE = `${APP_NAME} has been successfully installed.
  ${APP_NAME} will immediately start collecting customer interaction data and
