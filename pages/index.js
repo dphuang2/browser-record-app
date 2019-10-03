@@ -18,6 +18,7 @@ import { Toast, Context, Modal } from '@shopify/app-bridge-react';
 import { Redirect } from '@shopify/app-bridge/actions';
 import React from 'react';
 import PropTypes from 'prop-types';
+import LZString from 'lz-string';
 import { availableFilters, disambiguateLabel, defaultFilterMap } from '../utils/filter';
 import { sortOptions, sortOptionsMap } from '../utils/sort';
 import {
@@ -140,7 +141,7 @@ class Index extends React.Component {
 
       const getReplay = async (url) => {
         const response = await axios.get(url);
-        const replay = response.data;
+        const replay = JSON.parse(LZString.decompressFromBase64(response.data));
         this.replayMap[replay.id] = replay;
         this.setState(({ replays }) => {
           replays.push(replay);

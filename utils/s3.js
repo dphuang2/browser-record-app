@@ -1,6 +1,7 @@
 /* eslint no-console: ["error", { allow: ["error"] }] */
 import AWS from 'aws-sdk';
 
+import LZString from 'lz-string';
 import Customer from '../api/models/Customer';
 import { availableFilters } from './filter';
 
@@ -31,7 +32,7 @@ function generateSessionChunkFolderKey(shop, id) {
 }
 
 function generateSessionChunkKey(shop, id, timestamp, eventsLength) {
-  return `${generateSessionChunkFolderKey(shop, id)}/${timestamp}-${eventsLength}.json`;
+  return `${generateSessionChunkFolderKey(shop, id)}/${timestamp}-${eventsLength}`;
 }
 
 function generateSessionKey(shop, id) {
@@ -45,10 +46,10 @@ async function uploadJsonToS3(data, key) {
     Key: key,
   }
   try {
+    data = LZString.compressToBase64(data);
     await s3.upload({
       ...params,
       Body: data,
-      ContentType: 'application/json',
     }).promise();
   } catch (error) {
     console.error(error, error.stack);
@@ -62,7 +63,9 @@ async function getObjectFromS3(key) {
       Bucket: BUCKET,
       Key: key,
     }
-    return await s3.getObject(params).promise();
+    const object = await s3.getObject(params).promise();
+    const decompressed = LZString.decompressFromBase64(object.Body.toString());
+    return JSON.parse(decompressed);
   } catch (error) {
     throw error;
   }
@@ -146,8 +149,7 @@ async function getSessionUrlFromS3(shop, customer, filters) {
    */
   const getAndPushObject = async (content) => {
     try {
-      const data = await getObjectFromS3(content.Key);
-      const parsedObject = JSON.parse(data.Body.toString());
+      const parsedObject = await getObjectFromS3(content.Key);
       objects.push(parsedObject);
     } catch (error) {
       getFailed = true;

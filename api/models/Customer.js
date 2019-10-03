@@ -16,6 +16,10 @@ const customerSchema = new Schema({
   numClicks: Number,
   timestamp: Number,
   stale: Boolean,
+  lastTotalCartPrice: Number,
+  lastItemCount: Number,
+  maxTotalCartPrice: Number,
+  maxItemCount: Number,
 });
 
 customerSchema.statics.getLongestDurationByShop = async function (shop) {

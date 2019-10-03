@@ -91,7 +91,11 @@ export default async (req, res) => {
       promises.push(Customer.updateOne({ sessionId: parsed.id }, {
         $set: {
           stale: true,
-          sessionDuration: parsed.sessionDuration
+          sessionDuration: parsed.sessionDuration,
+          lastTotalCartPrice: parsed.lastTotalCartPrice,
+          lastItemCount: parsed.lastItemCount,
+          maxTotalCartPrice: parsed.maxTotalCartPrice,
+          maxItemCount: parsed.maxItemCount,
         }
       }));
       await Promise.all(promises);
