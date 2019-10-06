@@ -36,6 +36,10 @@ function durationStringFromSeconds(seconds) {
   return `${timesToUse[0]} ${timesToUse[1]}`;
 }
 
+function centsToDollars(cents) {
+  return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
+}
+
 const ReplayListItem = function mrl(props) {
   const {
     os,
@@ -49,6 +53,8 @@ const ReplayListItem = function mrl(props) {
     numClicks,
     handleItemClick,
     pageLoads,
+    lastItemCount,
+    lastTotalCartPrice,
   } = props;
 
   // Parse time
@@ -104,16 +110,26 @@ const ReplayListItem = function mrl(props) {
             {os}
           </div>
         </div>
-        <div className="ReplayListItem_Interactions">
+        <div className="ReplayListItem__Interactions">
           <div className="ReplayListItem__Clicks">
             {numClicks}
             {' '}
             {numClicks === 1 ? 'click' : 'clicks'}
           </div>
-          <div className="ReplayListItem__Clicks">
+          <div className="ReplayListItem__PageLoads">
             {pageLoads}
             {' '}
             {pageLoads === 1 ? 'page load' : 'page loads'}
+          </div>
+        </div>
+        <div className="ReplayListItem__Cart">
+          <div className="ReplayListItem__LastTotalCartPrice">
+            {centsToDollars(lastTotalCartPrice)}
+          </div>
+          <div className="ReplayListItem__MaxTotalCartPrice">
+            {lastItemCount}
+            {' '}
+            {lastItemCount === 1 ? 'item' : 'items'}
           </div>
         </div>
       </div>
@@ -125,6 +141,7 @@ const ReplayListItem = function mrl(props) {
   grid-template-areas:
   "hero"
   "useragent"
+  "cart"
   "interactions";
 }
 
@@ -147,14 +164,18 @@ const ReplayListItem = function mrl(props) {
   grid-area: useragent;
 }
 
-.ReplayListItem__Clicks {
+.ReplayListItem__Cart {
+  grid-area: cart;
+}
+
+.ReplayListItem__Interactions {
   grid-area: interactions;
 }
 
 @media(min-width: 800px) {
   .ReplayListItem {
     grid-template-columns: repeat(4, 1fr);
-    grid-template-areas: "hero hero useragent interactions";
+    grid-template-areas: "hero useragent interactions cart";
   }
 
   .ReplayListItem__Timestamp {
@@ -165,7 +186,11 @@ const ReplayListItem = function mrl(props) {
     text-align: right;
   }
 
-  .ReplayListItem__Clicks {
+  .ReplayListItem__Interactions {
+    text-align: right;
+  }
+
+  .ReplayListItem__Cart {
     text-align: right;
   }
 }
@@ -187,6 +212,8 @@ ReplayListItem.propTypes = {
   numClicks: PropTypes.number.isRequired,
   pageLoads: PropTypes.number.isRequired,
   handleItemClick: PropTypes.func.isRequired,
+  lastItemCount: PropTypes.number.isRequired,
+  lastTotalCartPrice: PropTypes.number.isRequired,
 };
 
 export default ReplayListItem;
