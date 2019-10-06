@@ -10,7 +10,6 @@ import {
   HTTP_INTERNAL_SERVER_ERROR,
   HTTP_OK,
   HTTP_UNAUTHORIZED,
-  HTTP_NOT_FOUND,
   HTTP_NO_CONTENT
 } from '../utils/constants';
 
@@ -111,7 +110,7 @@ export default async (req, res) => {
           await connectToDatabase(process.env.MONGODB_URL);
           const longestDuration = await Customer.getLongestDurationByShop(req.query.shop)
           if (longestDuration === undefined) {
-            res.status(HTTP_NOT_FOUND).send();
+            res.status(HTTP_NO_CONTENT).send();
             return;
           }
           let filters;
@@ -131,7 +130,7 @@ export default async (req, res) => {
           const numReplaysToShow = filters.numReplaysToShow != null ? filters.numReplaysToShow : DEFAULT_NUM_REPLAYS_TO_SHOW;
           const customers = await Customer.find(query).sort({ timestamp: 'desc' }).limit(numReplaysToShow).lean();
           if (customers.length === 0) {
-            res.status(HTTP_NOT_FOUND).send();
+            res.status(HTTP_NO_CONTENT).send();
             return;
           }
           let promises = [];

@@ -18,3 +18,4 @@ export const HTTP_BAD_REQUEST = 400;
 export const HTTP_FORBIDDEN = 403;
 export const UNAUTHORIZED_TOAST = 'You are not authorized';
 export const NO_REPLAYS_FOUND_TOAST = 'No replays found';
+export const FAILED_TO_FIND_REPLAY_TOAST = 'Could not find replay';

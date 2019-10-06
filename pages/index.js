@@ -24,10 +24,10 @@ import { sortOptions, sortOptionsMap } from '../utils/sort';
 import {
   HERO_TITLE,
   HERO_MESSAGE,
-  HTTP_NOT_FOUND,
   HTTP_UNAUTHORIZED,
   UNAUTHORIZED_TOAST,
   NO_REPLAYS_FOUND_TOAST,
+  HTTP_NO_CONTENT,
 } from '../utils/constants';
 import ReplayListItem from '../components/ReplayListItem';
 import Player from '../components/Player';
@@ -137,18 +137,31 @@ class Index extends React.Component {
     try {
       const response = await axios.get(`/api/sessions/shop/${shopOrigin}?filters=${encodeURIComponent(JSON.stringify(filters))}`);
       const { urls, longestDuration } = response.data;
+
+      if (urls == null) {
+        this.setState({
+          loading: false,
+        });
+        this.setToastMessage(NO_REPLAYS_FOUND_TOAST);
+        return;
+      }
+
       this.longestDuration = Math.ceil(longestDuration);
 
       const getReplay = async (url) => {
-        const response = await axios.get(url);
-        const replay = JSON.parse(LZString.decompressFromBase64(response.data));
-        this.replayMap[replay.id] = replay;
-        this.setState(({ replays }) => {
-          replays.push(replay);
-          if (replay.duration > this.longestDuration)
-            this.longestDuration = Math.ceil(replay.duration);
-          return { replays };
-        })
+        try {
+          const response = await axios.get(url);
+          const replay = JSON.parse(LZString.decompressFromBase64(response.data));
+          this.replayMap[replay.id] = replay;
+          this.setState(({ replays }) => {
+            replays.push(replay);
+            if (replay.duration > this.longestDuration)
+              this.longestDuration = Math.ceil(replay.duration);
+            return { replays };
+          })
+        } catch (error) {
+          // do nothing
+        }
       };
 
       let promises = [];
@@ -158,6 +171,8 @@ class Index extends React.Component {
       }
       await Promise.all(promises)
       this.setState(({ replays, sortValue }) => {
+        if (replays.length == 0)
+          this.setToastMessage(NO_REPLAYS_FOUND_TOAST);
         return {
           loading: false,
           replays: replays.sort(sortOptionsMap[sortValue])
@@ -165,17 +180,14 @@ class Index extends React.Component {
       })
     } catch (error) {
       if (error.response) {
+        this.setState({
+          loading: false,
+        });
         switch (error.response.status) {
-          case HTTP_NOT_FOUND:
-            this.setState({
-              loading: false,
-            })
+          case HTTP_NO_CONTENT:
             this.setToastMessage(NO_REPLAYS_FOUND_TOAST);
             return;
           case HTTP_UNAUTHORIZED:
-            this.setState({
-              loading: false,
-            });
             this.setToastMessage(UNAUTHORIZED_TOAST);
             return;
         }

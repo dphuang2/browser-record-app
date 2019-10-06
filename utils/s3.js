@@ -127,14 +127,18 @@ async function getSignedUrlForSession(shop, id) {
  */
 async function getSessionUrlFromS3(shop, customer, filters) {
   /**
+   * lets get all of the objects
+   */
+  const contents = await listObjects(generateSessionFolderKey(shop, customer.sessionId));
+  /**
+   * If our session does not actually exist on S3, return early here
+   */
+  if (contents.length === 0) return;
+  /**
    * Get fresh session object if not stale
    */
   if (customer.stale !== undefined && !customer.stale)
     return await getSignedUrlForSession(shop, customer.sessionId);
-  /**
-   * lets get all of the objects
-   */
-  const contents = await listObjects(generateSessionFolderKey(shop, customer.sessionId));
   /**
    * This customer has no session data so return undefined
    */
