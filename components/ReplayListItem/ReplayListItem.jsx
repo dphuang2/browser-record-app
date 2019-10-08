@@ -2,6 +2,7 @@ import {
   ResourceList, Avatar,
 } from '@shopify/polaris';
 import PropTypes from 'prop-types';
+import { centsToDollars } from '../../utils/util'
 
 const FLAG_IMG_FOLDER = '/static/flags/';
 
@@ -36,9 +37,6 @@ function durationStringFromSeconds(seconds) {
   return `${timesToUse[0]} ${timesToUse[1]}`;
 }
 
-function centsToDollars(cents) {
-  return (cents / 100).toLocaleString("en-US", { style: "currency", currency: "USD" });
-}
 
 const ReplayListItem = function mrl(props) {
   const {

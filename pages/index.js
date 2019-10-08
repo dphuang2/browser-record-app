@@ -21,6 +21,7 @@ import PropTypes from 'prop-types';
 import LZString from 'lz-string';
 import { availableFilters, disambiguateLabel, defaultFilterMap } from '../utils/filter';
 import { sortOptions, sortOptionsMap } from '../utils/sort';
+import { arraysEqual } from '../utils/util';
 import {
   HERO_TITLE,
   HERO_MESSAGE,
@@ -28,6 +29,10 @@ import {
   UNAUTHORIZED_TOAST,
   NO_REPLAYS_FOUND_TOAST,
   HTTP_NO_CONTENT,
+  TOTAL_CART_PRICE_FILTER_KEY,
+  DURATION_FILTER_KEY,
+  DEVICE_FILTER_KEY,
+  NUM_REPLAYS_TO_SHOW_FILTER_KEY,
 } from '../utils/constants';
 import ReplayListItem from '../components/ReplayListItem';
 import Player from '../components/Player';
@@ -43,14 +48,19 @@ class Index extends React.Component {
       currentReplay: undefined,
       replays: [],
       sortValue: 'TIMESTAMP_DESC',
-      durationFilter: availableFilters.durationFilter.defaultValue,
-      deviceFilter: availableFilters.deviceFilter.defaultValue,
-      numReplaysToShow: availableFilters.numReplaysToShow.defaultValue,
+      [TOTAL_CART_PRICE_FILTER_KEY]: availableFilters[TOTAL_CART_PRICE_FILTER_KEY].defaultValue,
+      [DURATION_FILTER_KEY]: availableFilters[DURATION_FILTER_KEY].defaultValue,
+      [DEVICE_FILTER_KEY]: availableFilters[DEVICE_FILTER_KEY].defaultValue,
+      [NUM_REPLAYS_TO_SHOW_FILTER_KEY]: availableFilters[NUM_REPLAYS_TO_SHOW_FILTER_KEY].defaultValue,
       lastFilters: {},
     };
     this.resourceListRef = React.createRef();
     this.replayMap = {};
-    this.longestDuration = Number.MAX_SAFE_INTEGER;
+
+    this.longestDuration = availableFilters[DURATION_FILTER_KEY].defaultValue[1];
+    this.maxTotalCartPrice = availableFilters[TOTAL_CART_PRICE_FILTER_KEY].defaultValue[1];
+
+    // Bindings
     this.handleSortChange = this.handleSortChange.bind(this);
     this.setToastMessage = this.setToastMessage.bind(this);
     this.handleItemClick = this.handleItemClick.bind(this);
@@ -136,7 +146,7 @@ class Index extends React.Component {
     });
     try {
       const response = await axios.get(`/api/sessions/shop/${shopOrigin}?filters=${encodeURIComponent(JSON.stringify(filters))}`);
-      const { urls, longestDuration } = response.data;
+      const { urls, longestDuration, maxTotalCartPrice } = response.data;
 
       if (urls == null) {
         this.setState({
@@ -147,6 +157,7 @@ class Index extends React.Component {
       }
 
       this.longestDuration = Math.ceil(longestDuration);
+      this.maxTotalCartPrice = Math.ceil(maxTotalCartPrice / 100);
 
       const getReplay = async (url) => {
         try {
@@ -155,8 +166,6 @@ class Index extends React.Component {
           this.replayMap[replay.id] = replay;
           this.setState(({ replays }) => {
             replays.push(replay);
-            if (replay.duration > this.longestDuration)
-              this.longestDuration = Math.ceil(replay.duration);
             return { replays };
           })
         } catch (error) {
@@ -218,6 +227,8 @@ class Index extends React.Component {
   }
 
   isFilterDefault(filter) {
+    if (Array.isArray(filter))
+      return arraysEqual(this.state[filter], availableFilters[filter].defaultValue);
     return this.state[filter] === availableFilters[filter].defaultValue;
   }
 
@@ -283,6 +294,7 @@ class Index extends React.Component {
       durationFilter,
       numReplaysToShow,
       deviceFilter,
+      totalCartPriceFilter,
     } = this.state;
 
     const appliedFilters = Object.keys(this.state)
@@ -297,7 +309,7 @@ class Index extends React.Component {
 
     const filters = [
       {
-        key: 'numReplaysToShow',
+        key: NUM_REPLAYS_TO_SHOW_FILTER_KEY,
         label: 'Maximum number of replays to show',
         filter: (
           <RangeSlider
@@ -308,30 +320,49 @@ class Index extends React.Component {
             min={0}
             max={200}
             step={1}
-            onChange={this.handleFilterChange('numReplaysToShow')}
+            onChange={this.handleFilterChange(NUM_REPLAYS_TO_SHOW_FILTER_KEY)}
             suffix="replays"
           />
         ),
       },
       {
-        key: 'durationFilter',
+        key: TOTAL_CART_PRICE_FILTER_KEY,
+        label: 'Total cart price between',
+        filter: (
+          <RangeSlider
+            label="Total cart price between"
+            labelHidden
+            value={this.isFilterDefault(TOTAL_CART_PRICE_FILTER_KEY) ? [0,
+              this.maxTotalCartPrice] : totalCartPriceFilter}
+            output
+            min={0.00}
+            max={this.maxTotalCartPrice}
+            step={0.50}
+            onChange={this.handleFilterChange(TOTAL_CART_PRICE_FILTER_KEY)}
+            prefix="$"
+          />
+        ),
+      },
+      {
+        key: DURATION_FILTER_KEY,
         label: 'Duration between',
         filter: (
           <RangeSlider
             label="Duration of session is between"
             labelHidden
-            value={durationFilter || [0, this.longestDuration]}
+            value={this.isFilterDefault(DURATION_FILTER_KEY) ? [0,
+              this.longestDuration] : durationFilter}
             output
             min={0}
             max={this.longestDuration}
             step={1}
-            onChange={this.handleFilterChange('durationFilter')}
+            onChange={this.handleFilterChange(DURATION_FILTER_KEY)}
             suffix="seconds"
           />
         ),
       },
       {
-        key: 'deviceFilter',
+        key: DEVICE_FILTER_KEY,
         label: 'Device',
         filter: (
           <ChoiceList
@@ -342,7 +373,7 @@ class Index extends React.Component {
               { label: 'Mobile', value: 'mobile' },
             ]}
             selected={deviceFilter || []}
-            onChange={this.handleFilterChange('deviceFilter')}
+            onChange={this.handleFilterChange(DEVICE_FILTER_KEY)}
             allowMultiple
           />
         ),

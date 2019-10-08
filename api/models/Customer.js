@@ -29,4 +29,11 @@ customerSchema.statics.getLongestDurationByShop = async function (shop) {
   return longestDurationCustomer.sessionDuration;
 }
 
+customerSchema.statics.getMaxTotalCartPriceByShop = async function (shop) {
+  const docs = await this.find({ shop }).sort({ lastTotalCartPrice: -1 }).limit(1);
+  if (docs.length < 1) return;
+  const longestDurationCustomer = docs[0];
+  return longestDurationCustomer.lastTotalCartPrice;
+}
+
 export default avoidOverwriteModelError('Customer', customerSchema);

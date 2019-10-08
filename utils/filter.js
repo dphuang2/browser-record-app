@@ -1,15 +1,27 @@
+import {
+  DURATION_FILTER_KEY,
+  DEVICE_FILTER_KEY,
+  NUM_REPLAYS_TO_SHOW_FILTER_KEY,
+  TOTAL_CART_PRICE_FILTER_KEY
+} from './constants';
+import { dollarsToDollars } from './util';
+
 // nullFilter returns all sessions
 const nullFilter = [{ sessionId: { $exists: true } }];
 const DEFAULT_NUM_REPLAYS_TO_SHOW = 50;
+const DEFAULT_DURATION_FILTER_MAX = 60;
+const DEFAULT_TOTAL_CART_PRICE_MAX = 100.0;
 
 function disambiguateLabel(key, value) {
   switch (key) {
-    case 'durationFilter':
+    case DURATION_FILTER_KEY:
       return `Duration is between ${value[0]} and ${value[1]} seconds`;
-    case 'deviceFilter':
+    case DEVICE_FILTER_KEY:
       return value.map((val) => `Device is ${val}`).join(', ');
-    case 'numReplaysToShow':
+    case NUM_REPLAYS_TO_SHOW_FILTER_KEY:
       return `Showing a maximum of ${value} replays`;
+    case TOTAL_CART_PRICE_FILTER_KEY:
+      return `Total cart price is between ${dollarsToDollars(value[0])} and ${dollarsToDollars(value[1])}`;
     default:
       return value;
   }
@@ -17,7 +29,36 @@ function disambiguateLabel(key, value) {
 
 
 const availableFilters = {
-  durationFilter: {
+  [TOTAL_CART_PRICE_FILTER_KEY]: {
+    functional: (bounds) => {
+      return (session) => {
+        bounds[0] *= 100;
+        bounds[1] *= 100;
+        if (bounds[0] <= session.lastTotalCartPrice && session.lastTotalCartPrice <= bounds[1])
+          return true;
+        else
+          return false;
+      }
+    },
+    mongodb: (bounds) => {
+      bounds[0] *= 100;
+      bounds[1] *= 100;
+      return {
+        $or: [
+          /**
+           * Just in case the document doesn't have the sessionDuration field
+           */
+          { sessionDuration: { $exists: false } },
+          /**
+           * The actual filtering happens here
+           */
+          { lastTotalCartPrice: { $exists: true, $lte: bounds[1], $gte: bounds[0] } }
+        ]
+      }
+    },
+    defaultValue: [0, DEFAULT_TOTAL_CART_PRICE_MAX],
+  },
+  [DURATION_FILTER_KEY]: {
     functional: (bounds) => {
       return (session) => {
         if (bounds[0] <= session.duration && session.duration <= bounds[1])
@@ -40,9 +81,9 @@ const availableFilters = {
         ]
       }
     },
-    defaultValue: null,
+    defaultValue: [0, DEFAULT_DURATION_FILTER_MAX],
   },
-  deviceFilter: {
+  [DEVICE_FILTER_KEY]: {
     functional: (devices) => {
       return (session) => {
         return devices.indexOf(session.device) > -1;
@@ -55,7 +96,7 @@ const availableFilters = {
     },
     defaultValue: null,
   },
-  numReplaysToShow: {
+  [NUM_REPLAYS_TO_SHOW_FILTER_KEY]: {
     functional: () => {
       return () => {
         return true;

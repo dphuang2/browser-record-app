@@ -59,10 +59,11 @@ function filtersToMongoFilters(filters) {
   return mongoDbFilters;
 }
 
-function generateResponse(urls, longestDuration) {
+function generateResponse(urls, longestDuration, maxTotalCartPrice) {
   return {
     urls,
-    longestDuration
+    longestDuration,
+    maxTotalCartPrice
   };
 }
 
@@ -108,11 +109,14 @@ export default async (req, res) => {
         const { tokenVerified } = await isTokenValid(token, req.query.shop);
         if (tokenVerified) {
           await connectToDatabase(process.env.MONGODB_URL);
-          const longestDuration = await Customer.getLongestDurationByShop(req.query.shop)
-          if (longestDuration === undefined) {
-            res.status(HTTP_NO_CONTENT).send();
-            return;
-          }
+          let longestDuration, maxTotalCartPrice;
+          const setLongestDuration = async () => longestDuration = await
+            Customer.getLongestDurationByShop(req.query.shop);
+          const setMaxTotalCartPrice = async () => maxTotalCartPrice = await
+            Customer.getMaxTotalCartPriceByShop(req.query.shop);
+          let promises = [];
+          promises.push(setLongestDuration());
+          promises.push(setMaxTotalCartPrice());
           let filters;
           try {
             filters = JSON.parse(req.query.filters);
@@ -127,13 +131,15 @@ export default async (req, res) => {
               }
             ]
           };
-          const numReplaysToShow = filters.numReplaysToShow != null ? filters.numReplaysToShow : DEFAULT_NUM_REPLAYS_TO_SHOW;
-          const customers = await Customer.find(query).sort({ timestamp: 'desc' }).limit(numReplaysToShow).lean();
+          const numReplaysToShow = filters.numReplaysToShow != null ?
+            filters.numReplaysToShow : DEFAULT_NUM_REPLAYS_TO_SHOW;
+          const customers = await Customer.find(query).sort({
+            timestamp: 'desc'
+          }).limit(numReplaysToShow).lean();
           if (customers.length === 0) {
             res.status(HTTP_NO_CONTENT).send();
             return;
           }
-          let promises = [];
           let urls = [];
           customers.forEach((customer) => {
             const pushUrls = async () => {
@@ -149,7 +155,13 @@ export default async (req, res) => {
             );
           });
           await Promise.all(promises);
-          res.status(HTTP_OK).send(generateResponse(urls, longestDuration));
+          if (urls.length === 0 || maxTotalCartPrice === undefined ||
+            longestDuration === undefined) {
+            res.status(HTTP_NO_CONTENT).send()
+            return;
+          }
+          res.status(HTTP_OK).send(generateResponse(urls, longestDuration,
+            maxTotalCartPrice));
         } else {
           res.status(HTTP_UNAUTHORIZED).send();
         }
