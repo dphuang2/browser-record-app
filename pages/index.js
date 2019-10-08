@@ -291,10 +291,6 @@ class Index extends React.Component {
       currentReplay,
       showToast,
       toastMessage,
-      durationFilter,
-      numReplaysToShow,
-      deviceFilter,
-      totalCartPriceFilter,
     } = this.state;
 
     const appliedFilters = Object.keys(this.state)
@@ -315,7 +311,7 @@ class Index extends React.Component {
           <RangeSlider
             label="Maximum number of replays to show"
             labelHidden
-            value={numReplaysToShow}
+            value={this.state[NUM_REPLAYS_TO_SHOW_FILTER_KEY]}
             output
             min={0}
             max={200}
@@ -333,7 +329,7 @@ class Index extends React.Component {
             label="Total cart price between"
             labelHidden
             value={this.isFilterDefault(TOTAL_CART_PRICE_FILTER_KEY) ? [0,
-              this.maxTotalCartPrice] : totalCartPriceFilter}
+              this.maxTotalCartPrice] : this.state[TOTAL_CART_PRICE_FILTER_KEY]}
             output
             min={0.00}
             max={this.maxTotalCartPrice}
@@ -351,7 +347,7 @@ class Index extends React.Component {
             label="Duration of session is between"
             labelHidden
             value={this.isFilterDefault(DURATION_FILTER_KEY) ? [0,
-              this.longestDuration] : durationFilter}
+              this.longestDuration] : this.state[DURATION_FILTER_KEY]}
             output
             min={0}
             max={this.longestDuration}
@@ -372,7 +368,7 @@ class Index extends React.Component {
               { label: 'Desktop', value: 'desktop' },
               { label: 'Mobile', value: 'mobile' },
             ]}
-            selected={deviceFilter || []}
+            selected={this.state[DEVICE_FILTER_KEY] || []}
             onChange={this.handleFilterChange(DEVICE_FILTER_KEY)}
             allowMultiple
           />

@@ -10,7 +10,8 @@ import {
   HTTP_INTERNAL_SERVER_ERROR,
   HTTP_OK,
   HTTP_UNAUTHORIZED,
-  HTTP_NO_CONTENT
+  HTTP_NO_CONTENT,
+  NUM_REPLAYS_TO_SHOW_FILTER_KEY,
 } from '../utils/constants';
 
 function countNumClicks(events) {
@@ -131,8 +132,8 @@ export default async (req, res) => {
               }
             ]
           };
-          const numReplaysToShow = filters.numReplaysToShow != null ?
-            filters.numReplaysToShow : DEFAULT_NUM_REPLAYS_TO_SHOW;
+          const numReplaysToShow = filters[NUM_REPLAYS_TO_SHOW_FILTER_KEY] != null ?
+            filters[NUM_REPLAYS_TO_SHOW_FILTER_KEY] : DEFAULT_NUM_REPLAYS_TO_SHOW;
           const customers = await Customer.find(query).sort({
             timestamp: 'desc'
           }).limit(numReplaysToShow).lean();
