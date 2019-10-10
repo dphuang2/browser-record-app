@@ -33,6 +33,7 @@ import {
   DURATION_FILTER_KEY,
   DEVICE_FILTER_KEY,
   NUM_REPLAYS_TO_SHOW_FILTER_KEY,
+  ITEM_COUNT_FILTER_KEY,
 } from '../utils/constants';
 import ReplayListItem from '../components/ReplayListItem';
 import Player from '../components/Player';
@@ -48,17 +49,19 @@ class Index extends React.Component {
       currentReplay: undefined,
       replays: [],
       sortValue: 'TIMESTAMP_DESC',
+      longestDuration: availableFilters[DURATION_FILTER_KEY].defaultValue[1],
+      maxTotalCartPrice: availableFilters[TOTAL_CART_PRICE_FILTER_KEY].defaultValue[1],
+      maxItemCount: availableFilters[ITEM_COUNT_FILTER_KEY].defaultValue[1],
       [TOTAL_CART_PRICE_FILTER_KEY]: availableFilters[TOTAL_CART_PRICE_FILTER_KEY].defaultValue,
       [DURATION_FILTER_KEY]: availableFilters[DURATION_FILTER_KEY].defaultValue,
       [DEVICE_FILTER_KEY]: availableFilters[DEVICE_FILTER_KEY].defaultValue,
       [NUM_REPLAYS_TO_SHOW_FILTER_KEY]: availableFilters[NUM_REPLAYS_TO_SHOW_FILTER_KEY].defaultValue,
+      [ITEM_COUNT_FILTER_KEY]: availableFilters[ITEM_COUNT_FILTER_KEY].defaultValue,
       lastFilters: {},
     };
     this.resourceListRef = React.createRef();
     this.replayMap = {};
 
-    this.longestDuration = availableFilters[DURATION_FILTER_KEY].defaultValue[1];
-    this.maxTotalCartPrice = availableFilters[TOTAL_CART_PRICE_FILTER_KEY].defaultValue[1];
 
     // Bindings
     this.handleSortChange = this.handleSortChange.bind(this);
@@ -146,7 +149,7 @@ class Index extends React.Component {
     });
     try {
       const response = await axios.get(`/api/sessions/shop/${shopOrigin}?filters=${encodeURIComponent(JSON.stringify(filters))}`);
-      const { urls, longestDuration, maxTotalCartPrice } = response.data;
+      const { urls, longestDuration, maxTotalCartPrice, maxItemCount } = response.data;
 
       if (urls == null) {
         this.setState({
@@ -156,8 +159,11 @@ class Index extends React.Component {
         return;
       }
 
-      this.longestDuration = Math.ceil(longestDuration);
-      this.maxTotalCartPrice = Math.ceil(maxTotalCartPrice / 100);
+      this.setState({
+        longestDuration: Math.ceil(longestDuration),
+        maxTotalCartPrice: Math.ceil(maxTotalCartPrice / 100),
+        maxItemCount,
+      });
 
       const getReplay = async (url) => {
         try {
@@ -291,6 +297,9 @@ class Index extends React.Component {
       currentReplay,
       showToast,
       toastMessage,
+      longestDuration,
+      maxItemCount,
+      maxTotalCartPrice,
     } = this.state;
 
     const appliedFilters = Object.keys(this.state)
@@ -322,6 +331,24 @@ class Index extends React.Component {
         ),
       },
       {
+        key: ITEM_COUNT_FILTER_KEY,
+        label: 'Item count between',
+        filter: (
+          <RangeSlider
+            label="Item count between"
+            labelHidden
+            value={this.isFilterDefault(ITEM_COUNT_FILTER_KEY) ? [0,
+              maxItemCount] : this.state[ITEM_COUNT_FILTER_KEY]}
+            output
+            min={0}
+            max={maxItemCount}
+            step={1}
+            onChange={this.handleFilterChange(ITEM_COUNT_FILTER_KEY)}
+            suffix="items"
+          />
+        ),
+      },
+      {
         key: TOTAL_CART_PRICE_FILTER_KEY,
         label: 'Total cart price between',
         filter: (
@@ -329,10 +356,10 @@ class Index extends React.Component {
             label="Total cart price between"
             labelHidden
             value={this.isFilterDefault(TOTAL_CART_PRICE_FILTER_KEY) ? [0,
-              this.maxTotalCartPrice] : this.state[TOTAL_CART_PRICE_FILTER_KEY]}
+              maxTotalCartPrice] : this.state[TOTAL_CART_PRICE_FILTER_KEY]}
             output
             min={0.00}
-            max={this.maxTotalCartPrice}
+            max={maxTotalCartPrice}
             step={0.50}
             onChange={this.handleFilterChange(TOTAL_CART_PRICE_FILTER_KEY)}
             prefix="$"
@@ -347,10 +374,10 @@ class Index extends React.Component {
             label="Duration of session is between"
             labelHidden
             value={this.isFilterDefault(DURATION_FILTER_KEY) ? [0,
-              this.longestDuration] : this.state[DURATION_FILTER_KEY]}
+              longestDuration] : this.state[DURATION_FILTER_KEY]}
             output
             min={0}
-            max={this.longestDuration}
+            max={longestDuration}
             step={1}
             onChange={this.handleFilterChange(DURATION_FILTER_KEY)}
             suffix="seconds"

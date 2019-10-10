@@ -2,7 +2,8 @@ import {
   DURATION_FILTER_KEY,
   DEVICE_FILTER_KEY,
   NUM_REPLAYS_TO_SHOW_FILTER_KEY,
-  TOTAL_CART_PRICE_FILTER_KEY
+  TOTAL_CART_PRICE_FILTER_KEY,
+  ITEM_COUNT_FILTER_KEY
 } from './constants';
 import { dollarsToDollars } from './util';
 
@@ -10,6 +11,7 @@ import { dollarsToDollars } from './util';
 const nullFilter = [{ sessionId: { $exists: true } }];
 const DEFAULT_NUM_REPLAYS_TO_SHOW = 50;
 const DEFAULT_DURATION_FILTER_MAX = 60;
+const DEFAULT_ITEM_COUNT_MAX = 10;
 const DEFAULT_TOTAL_CART_PRICE_MAX = 100.0;
 
 function disambiguateLabel(key, value) {
@@ -22,6 +24,8 @@ function disambiguateLabel(key, value) {
       return `Showing a maximum of ${value} replays`;
     case TOTAL_CART_PRICE_FILTER_KEY:
       return `Total cart price is between ${dollarsToDollars(value[0])} and ${dollarsToDollars(value[1])}`;
+    case ITEM_COUNT_FILTER_KEY:
+      return `Item count is between ${value[0]} and ${value[1]}`;
     default:
       return value;
   }
@@ -29,6 +33,31 @@ function disambiguateLabel(key, value) {
 
 
 const availableFilters = {
+  [ITEM_COUNT_FILTER_KEY]: {
+    functional: (bounds) => {
+      return (session) => {
+        if (bounds[0] <= session.lastItemCount && session.lastItemCount <= bounds[1])
+          return true;
+        else
+          return false;
+      }
+    },
+    mongodb: (bounds) => {
+      return {
+        $or: [
+          /**
+           * Just in case the document doesn't have the sessionDuration field
+           */
+          { sessionDuration: { $exists: false } },
+          /**
+           * The actual filtering happens here
+           */
+          { lastItemCount: { $exists: true, $lte: bounds[1], $gte: bounds[0] } }
+        ]
+      }
+    },
+    defaultValue: [0, DEFAULT_ITEM_COUNT_MAX],
+  },
   [TOTAL_CART_PRICE_FILTER_KEY]: {
     functional: (bounds) => {
       return (session) => {

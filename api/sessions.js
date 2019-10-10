@@ -60,11 +60,12 @@ function filtersToMongoFilters(filters) {
   return mongoDbFilters;
 }
 
-function generateResponse(urls, longestDuration, maxTotalCartPrice) {
+function generateResponse(urls, longestDuration, maxTotalCartPrice, maxItemCount) {
   return {
     urls,
     longestDuration,
-    maxTotalCartPrice
+    maxTotalCartPrice,
+    maxItemCount
   };
 }
 
@@ -110,14 +111,17 @@ export default async (req, res) => {
         const { tokenVerified } = await isTokenValid(token, req.query.shop);
         if (tokenVerified) {
           await connectToDatabase(process.env.MONGODB_URL);
-          let longestDuration, maxTotalCartPrice;
+          let longestDuration, maxTotalCartPrice, maxItemCount;
           const setLongestDuration = async () => longestDuration = await
             Customer.getLongestDurationByShop(req.query.shop);
           const setMaxTotalCartPrice = async () => maxTotalCartPrice = await
             Customer.getMaxTotalCartPriceByShop(req.query.shop);
+          const setMaxItemCount = async () => maxItemCount = await
+            Customer.getMaxItemCountByShop(req.query.shop);
           let promises = [];
           promises.push(setLongestDuration());
           promises.push(setMaxTotalCartPrice());
+          promises.push(setMaxItemCount());
           let filters;
           try {
             filters = JSON.parse(req.query.filters);
@@ -162,7 +166,7 @@ export default async (req, res) => {
             return;
           }
           res.status(HTTP_OK).send(generateResponse(urls, longestDuration,
-            maxTotalCartPrice));
+            maxTotalCartPrice, maxItemCount));
         } else {
           res.status(HTTP_UNAUTHORIZED).send();
         }
