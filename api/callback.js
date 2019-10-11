@@ -87,7 +87,7 @@ export default async (req, res) => {
         cookies.set(
           JSON_WEB_TOKEN_COOKIE_KEY,
           sign(createTokenObject(shop, accessToken, true, false), SHOPIFY_API_SECRET_KEY),
-          { overwite: true, }
+          { overwrite: true, }
         );
         /**
          * Redirect to the app
@@ -115,7 +115,7 @@ export default async (req, res) => {
       cookies.set(
         JSON_WEB_TOKEN_COOKIE_KEY,
         sign(createTokenObject(shop, accessToken, false, false), SHOPIFY_API_SECRET_KEY),
-        { overwite: true, }
+        { overwrite: true, }
       );
       /**
        * Redirect to the recurring charge activation!
