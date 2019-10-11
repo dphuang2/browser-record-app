@@ -1,4 +1,5 @@
 /* eslint no-console: ["error", { allow: ["error"] }] */
+import Cookies from 'cookies';
 import { sign } from 'jsonwebtoken';
 import axios from 'axios';
 import crypto from 'crypto';
@@ -24,8 +25,10 @@ export default async (req, res) => {
   const {
     shop, hmac, code, state, timestamp,
   } = req.query;
+  const cookies = new Cookies(req, res);
+  const stateCookie = cookies.get('state');
 
-  if (state !== req.cookies.state) {
+  if (state !== stateCookie) {
     res.status(HTTP_FORBIDDEN).send('Request origin cannot be verified');
     return;
   }
@@ -78,17 +81,21 @@ export default async (req, res) => {
       const subscriptionActive = await isSubscriptionActive(shop, accessToken);
       if (subscriptionActive) {
         /**
-         * 1. We found the activated recurring charge so we can safely let the
+         * We found the activated recurring charge so we can safely let the
          * merchant use our app
-         * 2. Redirect to the app
+         */
+        cookies.set(
+          JSON_WEB_TOKEN_COOKIE_KEY,
+          sign(createTokenObject(shop, accessToken, true, false), SHOPIFY_API_SECRET_KEY),
+          { overwite: true, }
+        );
+        /**
+         * Redirect to the app
          */
         res.writeHead(HTTP_FOUND, {
           Location: `/?shop=${shop}`,
-          "Set-Cookie": JSON_WEB_TOKEN_COOKIE_KEY + "=" +
-            sign(createTokenObject(shop, accessToken, true, false),
-              SHOPIFY_API_SECRET_KEY) + '; Path=/',
         });
-        res.send();
+        res.end();
         return;
       }
       /**
@@ -102,17 +109,21 @@ export default async (req, res) => {
         TRIAL_DAYS
       );
       /**
-       * 1. Set cookie with shop and access token for validation when entering the
+       * Set cookie with shop and access token for validation when entering the
        * app and for the installation process it after successfull billing
-       * 2. Redirect to the recurring charge activation!
+       */
+      cookies.set(
+        JSON_WEB_TOKEN_COOKIE_KEY,
+        sign(createTokenObject(shop, accessToken, false, false), SHOPIFY_API_SECRET_KEY),
+        { overwite: true, }
+      );
+      /**
+       * Redirect to the recurring charge activation!
        */
       res.writeHead(HTTP_FOUND, {
         Location: confirmationUrl,
-        "Set-Cookie": JSON_WEB_TOKEN_COOKIE_KEY + "=" +
-          sign(createTokenObject(shop, accessToken, true, false),
-            SHOPIFY_API_SECRET_KEY) + '; Path=/',
       });
-      res.send();
+      res.end();
     } catch (error) {
       console.error(error);
       res.status(HTTP_INTERNAL_SERVER_ERROR).send();
