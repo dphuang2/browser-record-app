@@ -3,12 +3,12 @@ import App from 'next/app';
 import { AppProvider } from '@shopify/polaris';
 import { setCookie, parseCookies } from 'nookies';
 import { sign } from 'jsonwebtoken';
+import UAParser from 'ua-parser-js';
 import { Provider } from '@shopify/app-bridge-react';
 import enTranslations from '@shopify/polaris/locales/en.json';
 import { JSON_WEB_TOKEN_COOKIE_KEY } from '../utils/constants';
 import { isTokenValid, redirect, createTokenObject } from '../utils/auth';
 import '@shopify/polaris/styles.scss';
-
 
 const { SHOPIFY_API_SECRET_KEY } = process.env;
 
@@ -31,6 +31,14 @@ class MyApp extends App {
     const authUri = `${authEndpoint}?shop=${shopOrigin}`;
     const token = parseCookies(ctx)[JSON_WEB_TOKEN_COOKIE_KEY];
     if (!token) {
+      // Do the authorization outside of the embedded domain to avoid cross-site
+      // cookie blocking
+      const { req } = ctx;
+      const agentData = UAParser(req.headers['user-agent']);
+      const device = (agentData.device.type ? 'mobile' : 'desktop');
+      if (device === 'mobile') {
+        return { shopOrigin, apiKey: process.env.SHOPIFY_API_KEY };
+      }
       redirect(ctx.res, authUri);
       return;
     }
