@@ -1,5 +1,4 @@
 import nonce from 'nonce';
-import Cookies from 'cookies';
 import {
   HTTP_FOUND,
   HTTP_BAD_REQUEST
@@ -15,10 +14,9 @@ export default async (req, res) => {
       }&state=${state
       }&redirect_uri=https://${req.headers.host}/auth/callback`;
 
-    const cookies = new Cookies(req, res);
-    cookies.set('state', state);
     res.writeHead(HTTP_FOUND, {
       Location: installUrl,
+      "Set-Cookie": "state=" + state
     });
     res.end();
     return;
