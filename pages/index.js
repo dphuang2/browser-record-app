@@ -90,7 +90,6 @@ class Index extends React.Component {
     const app = this.context;
     const redirect = Redirect.create(app);
     const { decodedToken, shopOrigin, apiKey } = this.props;
-    const { recurringChargeActivated } = decodedToken;
     const redirectAuthUrl = `${app.localOrigin}/auth?shop=${shopOrigin}`;
     try {
       // This is the test that determines if we are inside shopify
@@ -98,7 +97,7 @@ class Index extends React.Component {
       /**
        * This is outside of shopify
        */
-      if (!recurringChargeActivated) {
+      if (decodedToken && !decodedToken.recurringChargeActivated) {
         window.location.assign(redirectAuthUrl);
         return;
       }
@@ -110,7 +109,7 @@ class Index extends React.Component {
       /**
        * This is inside shopify
        */
-      if (!recurringChargeActivated) {
+      if (decodedToken && !decodedToken.recurringChargeActivated) {
         redirect.dispatch(Redirect.Action.REMOTE, redirectAuthUrl);
         return;
       }
