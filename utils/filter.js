@@ -3,7 +3,8 @@ import {
   DEVICE_FILTER_KEY,
   NUM_REPLAYS_TO_SHOW_FILTER_KEY,
   TOTAL_CART_PRICE_FILTER_KEY,
-  ITEM_COUNT_FILTER_KEY
+  ITEM_COUNT_FILTER_KEY,
+  DATE_RANGE_FILTER_KEY,
 } from './constants';
 import { dollarsToDollars } from './util';
 
@@ -26,13 +27,47 @@ function disambiguateLabel(key, value) {
       return `Total cart price is between ${dollarsToDollars(value[0])} and ${dollarsToDollars(value[1])}`;
     case ITEM_COUNT_FILTER_KEY:
       return `Item count is between ${value[0]} and ${value[1]}`;
+    case DATE_RANGE_FILTER_KEY:
+      return `Date is between ${value.start.toLocaleDateString()} and ${value.end.toLocaleDateString()}`;
     default:
       return value;
   }
 }
 
 
+const currentDate = new Date();
 const availableFilters = {
+  [DATE_RANGE_FILTER_KEY]: {
+    functional: (bounds) => {
+      const start = new Date(bounds.start).getTime();
+      const end = new Date(bounds.end).getTime();
+      return (session) => {
+        if (start <= session.timestamp && session.timestamp <= end)
+          return true;
+        else
+          return false;
+      }
+    },
+    mongodb: (bounds) => {
+      const start = new Date(bounds.start);
+      const end = new Date(bounds.end);
+      // Increment end by 1 day if they are the same date
+      if (start.getDate() === end.getDate()) end.setDate(end.getDate() + 1);
+      return {
+        $or: [
+          /**
+           * Just in case the document doesn't have the sessionDuration field
+           */
+          { timestamp: { $exists: false } },
+          /**
+           * The actual filtering happens here
+           */
+          { timestamp: { $exists: true, $lte: end.getTime(), $gte: start.getTime() } }
+        ]
+      }
+    },
+    defaultValue: {start: currentDate, end: currentDate},
+  },
   [ITEM_COUNT_FILTER_KEY]: {
     functional: (bounds) => {
       return (session) => {
@@ -48,7 +83,7 @@ const availableFilters = {
           /**
            * Just in case the document doesn't have the sessionDuration field
            */
-          { sessionDuration: { $exists: false } },
+          { lastItemCount: { $exists: false } },
           /**
            * The actual filtering happens here
            */
@@ -77,7 +112,7 @@ const availableFilters = {
           /**
            * Just in case the document doesn't have the sessionDuration field
            */
-          { sessionDuration: { $exists: false } },
+          { lastTotalCartPrice: { $exists: false } },
           /**
            * The actual filtering happens here
            */

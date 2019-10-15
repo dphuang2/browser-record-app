@@ -11,6 +11,7 @@ import {
   RangeSlider,
   ChoiceList,
   Link,
+  DatePicker,
 } from '@shopify/polaris';
 import axios from 'axios';
 import UAParser from 'ua-parser-js';
@@ -34,6 +35,7 @@ import {
   DEVICE_FILTER_KEY,
   NUM_REPLAYS_TO_SHOW_FILTER_KEY,
   ITEM_COUNT_FILTER_KEY,
+  DATE_RANGE_FILTER_KEY,
 } from '../utils/constants';
 import ReplayListItem from '../components/ReplayListItem';
 import Player from '../components/Player';
@@ -42,6 +44,7 @@ class Index extends React.Component {
 
   constructor(props) {
     super(props);
+    const currentDate = new Date();
     this.state = {
       loading: false,
       showToast: false,
@@ -49,9 +52,11 @@ class Index extends React.Component {
       currentReplay: undefined,
       replays: [],
       sortValue: 'TIMESTAMP_DESC',
+      datePickerDate: { month: currentDate.getMonth(), year: currentDate.getFullYear()},
       longestDuration: availableFilters[DURATION_FILTER_KEY].defaultValue[1],
       maxTotalCartPrice: availableFilters[TOTAL_CART_PRICE_FILTER_KEY].defaultValue[1],
       maxItemCount: availableFilters[ITEM_COUNT_FILTER_KEY].defaultValue[1],
+      [DATE_RANGE_FILTER_KEY]: availableFilters[DATE_RANGE_FILTER_KEY].defaultValue,
       [TOTAL_CART_PRICE_FILTER_KEY]: availableFilters[TOTAL_CART_PRICE_FILTER_KEY].defaultValue,
       [DURATION_FILTER_KEY]: availableFilters[DURATION_FILTER_KEY].defaultValue,
       [DEVICE_FILTER_KEY]: availableFilters[DEVICE_FILTER_KEY].defaultValue,
@@ -75,6 +80,7 @@ class Index extends React.Component {
     this.handleRemove = this.handleRemove.bind(this);
     this.areAllFiltersDefault = this.areAllFiltersDefault.bind(this);
     this.isFilterDefault = this.isFilterDefault.bind(this);
+    this.handleMonthChange = this.handleMonthChange.bind(this);
   }
 
   async componentDidMount() {
@@ -223,6 +229,12 @@ class Index extends React.Component {
     this.setState({ [key]: value });
   };
 
+  handleMonthChange(month, year) {
+    this.setState({
+      datePickerDate: { month, year }
+    });
+  }
+
   /**
    * This function checks if the current applied filters (the ones that show up
    * in the UI) reflect the filters used to get the current set of replays.
@@ -300,8 +312,8 @@ class Index extends React.Component {
       longestDuration,
       maxItemCount,
       maxTotalCartPrice,
+      datePickerDate,
     } = this.state;
-
     const appliedFilters = Object.keys(this.state)
       .filter((key) => key in availableFilters && !this.isFilterDefault(key))
       .map((key) => {
@@ -329,6 +341,21 @@ class Index extends React.Component {
             suffix="replays"
           />
         ),
+      },
+      {
+        key: DATE_RANGE_FILTER_KEY,
+        label: 'Date between',
+        filter: (
+          <DatePicker
+            month={datePickerDate.month}
+            year={datePickerDate.year}
+            onChange={this.handleFilterChange(DATE_RANGE_FILTER_KEY)}
+            onMonthChange={this.handleMonthChange}
+            selected={this.state[DATE_RANGE_FILTER_KEY]}
+            allowRange
+          />
+        ),
+        shortcut: true
       },
       {
         key: ITEM_COUNT_FILTER_KEY,
@@ -400,7 +427,6 @@ class Index extends React.Component {
             allowMultiple
           />
         ),
-        shortcut: true,
       },
     ]
 

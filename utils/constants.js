@@ -25,3 +25,4 @@ export const DEVICE_FILTER_KEY = 'deviceFilter';
 export const NUM_REPLAYS_TO_SHOW_FILTER_KEY = 'numReplaysToShow';
 export const TOTAL_CART_PRICE_FILTER_KEY = 'totalCartPriceFilter';
 export const ITEM_COUNT_FILTER_KEY = 'itemCountFilter';
+export const DATE_RANGE_FILTER_KEY = 'dateRangeFilter';
