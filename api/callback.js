@@ -7,6 +7,7 @@ import querystring from 'querystring';
 import {
   isSubscriptionActive,
   getAppSubscriptionConfirmationUrl,
+  installScriptTag,
   createTokenObject,
   MONTHLY_CHARGE_AMOUNT,
   TRIAL_DAYS,
@@ -89,6 +90,10 @@ export default async (req, res) => {
           sign(createTokenObject(shop, accessToken, true, false), SHOPIFY_API_SECRET_KEY),
           { overwrite: true, }
         );
+        /**
+         * Update script tag if needed
+         */
+        await installScriptTag(shop, accessToken);
         /**
          * Redirect to the app
          */

@@ -4,7 +4,7 @@ import axios from 'axios';
 import { GraphQLClient } from 'graphql-request';
 import { TEST_SHOP_DOMAIN } from './constants';
 
-const SCRIPT_TAG = 'https://cdn.jsdelivr.net/npm/browser-record/dist/br.min.js';
+const SCRIPT_TAG = 'https://cdn.jsdelivr.net/npm/balphi';
 const RECURRING_CHARGE_NAME = 'Rewind Recurring Plan';
 export const MONTHLY_CHARGE_AMOUNT = 10.0;
 export const TRIAL_DAYS = 7;
@@ -131,18 +131,42 @@ export async function installScriptTag(shop, accessToken) {
 
   // Check if there is already a script tag installed
   const query = `query {
-    scriptTags (first: 1, src: "${SCRIPT_TAG}") {
+    scriptTags (first: 3) {
       edges {
         node {
           id
+          src
         }
       }
     }
   }`;
 
   const response = await client.request(query);
-  if (response.scriptTags.edges.length === 0) {
-    // since no script tag was installed, install one.
+  let numScriptTags = response.scriptTags.edges.length;
+  
+  /**
+   * Delete all other script tags that do not match the src of SCRIPT_TAG
+   */
+  let promises = [];
+  response.scriptTags.edges.map((node) => {
+    return { src: node.node.src, id: node.node.id }
+  }).filter(({ src }) => src !== SCRIPT_TAG).forEach(async ({ id }) => {
+    const mutation = `mutation {
+      scriptTagDelete(id: "${id}") {
+        deletedScriptTagId
+        userErrors {
+          field
+          message
+        }
+      }
+    }`
+    promises.push(client.request(mutation));
+    numScriptTags--;
+  })
+  Promise.all(promises);
+
+  if (numScriptTags === 0) {
+    // since no script is installed, install one.
     const mutation = `mutation {
                         scriptTagCreate(input: {
                           src: "${SCRIPT_TAG}"
@@ -154,5 +178,5 @@ export async function installScriptTag(shop, accessToken) {
                         }
                       }`;
     await client.request(mutation);
-  }
+  } 
 }

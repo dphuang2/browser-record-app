@@ -1,7 +1,7 @@
 {
-  "name": "browser-record-app",
-  "version": "0.1.0",
-  "description": "Application for browser-record",
+  "name": "Loopr",
+  "version": "1.0.0",
+  "description": "Entire application for Loopr",
   "author": "Dylan Huang",
   "repository": "https://github.com/dphuang2/browser-record-app",
   "license": "ISC",
