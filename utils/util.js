@@ -14,6 +14,8 @@ function arraysEqual(a, b) {
     return true;
 }
 function centsToDollars(cents) {
+    if (typeof cents === "undefined")
+        return dollarsToDollars(0);
     return dollarsToDollars(cents / 100);
 }
 

@@ -124,11 +124,13 @@ const ReplayListItem = function mrl(props) {
           <div className="ReplayListItem__LastTotalCartPrice">
             {centsToDollars(lastTotalCartPrice)}
           </div>
-          <div className="ReplayListItem__MaxTotalCartPrice">
-            {lastItemCount}
-            {' '}
-            {lastItemCount === 1 ? 'item' : 'items'}
-          </div>
+          {!isNaN(lastItemCount) && (
+            <div className="ReplayListItem__MaxTotalCartPrice">
+              {lastItemCount}
+              {' '}
+              {lastItemCount === 1 ? 'item' : 'items'}
+            </div>
+          )}
         </div>
       </div>
       <style jsx>
