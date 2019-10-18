@@ -4,7 +4,7 @@ import { avoidOverwriteModelError } from '../../utils/db';
 const customerSchema = new Schema({
   browser: String,
   os: String,
-  sessionId: String,
+  id: String,
   region: String,
   country: String,
   shop: String,
@@ -14,8 +14,7 @@ const customerSchema = new Schema({
   // Calculated at time of retrieval from S3
   pageLoads: Number,
   numClicks: Number,
-  timestamp: Number,
-  stale: Boolean,
+  startTime: Number,
   lastTotalCartPrice: Number,
   lastItemCount: Number,
   maxTotalCartPrice: Number,

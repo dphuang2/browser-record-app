@@ -2,7 +2,7 @@
 import Cookies from 'cookies';
 import Customer from './models/Customer';
 import connectToDatabase from '../utils/db';
-import { availableFilters, nullFilter, DEFAULT_NUM_REPLAYS_TO_SHOW } from '../utils/filter';
+import { availableFilters, nullFilter, DEFAULT_NUM_CUSTOMERS_TO_SHOW } from '../utils/filter';
 import { isTokenValid } from '../utils/auth';
 import { uploadSessionChunkToS3, getSessionUrlFromS3 } from '../utils/s3';
 import {
@@ -11,40 +11,8 @@ import {
   HTTP_OK,
   HTTP_UNAUTHORIZED,
   HTTP_NO_CONTENT,
-  NUM_REPLAYS_TO_SHOW_FILTER_KEY,
+  NUM_CUSTOMERS_TO_SHOW_FILTER_KEY,
 } from '../utils/constants';
-
-function countNumClicks(events) {
-  // Count the number of clicks.
-  // The criteria of a click is as follows:
-  // type: IncrementalSnapshot (3): https://github.com/rrweb-io/rrweb/blob/master/typings/types.d.ts#L6
-  // and
-  // source: MouseInteraction (2): https://github.com/rrweb-io/rrweb/blob/master/typings/types.d.ts#L42
-  // and
-  // (dataType: TouchStart (7): https://github.com/rrweb-io/rrweb/blob/master/typings/types.d.ts#L147
-  // or
-  // dataType: Click (2): https://github.com/rrweb-io/rrweb/blob/master/typings/types.d.ts#L142)
-  let numClicks = 0;
-  for (let i = 0; i < events.length; i += 1) {
-    const { type, data } = events[i];
-    const { source } = data;
-    const dataType = data.type;
-    if (type === 3 && source === 2 && (dataType === 2 || dataType === 7)) numClicks += 1;
-  }
-  return numClicks;
-}
-
-function countPageLoads(events) {
-  // Count the number of page loads.
-  // The criteria of a page loads is as follows:
-  // type: Meta (2): https://github.com/rrweb-io/rrweb/blob/master/typings/types.d.ts#L7
-  let numPageLoads = 0;
-  for (let i = 0; i < events.length; i += 1) {
-    const { type } = events[i];
-    if (type === 2) numPageLoads += 1;
-  }
-  return numPageLoads;
-}
 
 function filtersToMongoFilters(filters) {
   if (!filters || Object.keys(filters).length === 0)
@@ -60,9 +28,9 @@ function filtersToMongoFilters(filters) {
   return mongoDbFilters;
 }
 
-function generateResponse(urls, longestDuration, maxTotalCartPrice, maxItemCount) {
+function generateResponse(customers, longestDuration, maxTotalCartPrice, maxItemCount) {
   return {
-    urls,
+    customers,
     longestDuration,
     maxTotalCartPrice,
     maxItemCount
@@ -76,8 +44,6 @@ export default async (req, res) => {
        * Handle new chunk
        */
       const parsed = JSON.parse(req.body);
-      parsed.pageLoads = countPageLoads(parsed.events);
-      parsed.numClicks = countNumClicks(parsed.events);
       let promises = [];
       promises.push(uploadSessionChunkToS3(
         JSON.stringify(parsed),
@@ -87,42 +53,41 @@ export default async (req, res) => {
         parsed.events.length
       ));
       /**
-       * Invalidate customer session data in MongoDB and update session duration
+       * Update customer data
        */
       await connectToDatabase(process.env.MONGODB_URL);
-      promises.push(Customer.updateOne({ sessionId: parsed.id }, {
+      promises.push(Customer.updateOne({ id: parsed.id }, {
         $set: {
-          stale: true,
-          shop: parsed.shop,
-          id: parsed.id,
-          sessionDuration: parsed.sessionDuration,
-          lastTotalCartPrice: parsed.lastTotalCartPrice,
-          lastItemCount: parsed.lastItemCount,
-          maxTotalCartPrice: parsed.maxTotalCartPrice,
-          maxItemCount: parsed.maxItemCount,
+          ...parsed,
         }
       }));
       await Promise.all(promises);
       res.status(HTTP_NO_CONTENT).send();
     } else if (req.method === 'GET') {
-      if (req.query.shop) {
-        const cookies = new Cookies(req, res);
-        const token = cookies.get('token'); // JSON web token set in /api/callback
-        const { tokenVerified } = await isTokenValid(token, req.query.shop);
-        if (tokenVerified) {
-          await connectToDatabase(process.env.MONGODB_URL);
+      const shop = req.query.shop;
+      const cookies = new Cookies(req, res);
+      const token = cookies.get('token'); // JSON web token set in /api/callback
+      const { tokenVerified } = await isTokenValid(token, shop);
+      if (tokenVerified) {
+        await connectToDatabase(process.env.MONGODB_URL);
+        const customer = req.query.customer;
+        if (customer && shop) {
+          const url = await getSessionUrlFromS3(shop, JSON.parse(customer));
+          res.status(HTTP_OK).send(url);
+          return;
+        } else if (shop) {
           let longestDuration, maxTotalCartPrice, maxItemCount;
           const setLongestDuration = async () => longestDuration = await
-            Customer.getLongestDurationByShop(req.query.shop);
+            Customer.getLongestDurationByShop(shop);
           const setMaxTotalCartPrice = async () => maxTotalCartPrice = await
-            Customer.getMaxTotalCartPriceByShop(req.query.shop);
+            Customer.getMaxTotalCartPriceByShop(shop);
           const setMaxItemCount = async () => maxItemCount = await
-            Customer.getMaxItemCountByShop(req.query.shop);
+            Customer.getMaxItemCountByShop(shop);
           let promises = [];
           promises.push(setLongestDuration());
           promises.push(setMaxTotalCartPrice());
           promises.push(setMaxItemCount());
-          let filters;
+          let filters = {};
           try {
             filters = JSON.parse(req.query.filters);
           } catch (error) {
@@ -130,42 +95,24 @@ export default async (req, res) => {
           }
           const query = {
             $and: [
-              { shop: req.query.shop },
+              { shop },
               {
                 $and: filtersToMongoFilters(filters)
               }
             ]
           };
-          const numReplaysToShow = filters[NUM_REPLAYS_TO_SHOW_FILTER_KEY] != null ?
-            filters[NUM_REPLAYS_TO_SHOW_FILTER_KEY] : DEFAULT_NUM_REPLAYS_TO_SHOW;
+          const numReplaysToShow = filters[NUM_CUSTOMERS_TO_SHOW_FILTER_KEY] != null ?
+            filters[NUM_CUSTOMERS_TO_SHOW_FILTER_KEY] : DEFAULT_NUM_CUSTOMERS_TO_SHOW;
           const customers = await Customer.find(query).sort({
-            timestamp: 'desc'
+            startTime: 'desc'
           }).limit(numReplaysToShow).lean();
-          if (customers.length === 0) {
-            res.status(HTTP_NO_CONTENT).send();
-            return;
-          }
-          let urls = [];
-          customers.forEach((customer) => {
-            const pushUrls = async () => {
-              const url = await getSessionUrlFromS3(
-                req.query.shop,
-                customer,
-                filters,
-              );
-              if (url) urls.push(url);
-            }
-            promises.push(
-              pushUrls()
-            );
-          });
           await Promise.all(promises);
-          if (urls.length === 0 || maxTotalCartPrice === undefined ||
+          if (customers.length === 0 || maxTotalCartPrice === undefined ||
             longestDuration === undefined) {
             res.status(HTTP_NO_CONTENT).send()
             return;
           }
-          res.status(HTTP_OK).send(generateResponse(urls, longestDuration,
+          res.status(HTTP_OK).send(generateResponse(customers, longestDuration,
             maxTotalCartPrice, maxItemCount));
         } else {
           res.status(HTTP_UNAUTHORIZED).send();

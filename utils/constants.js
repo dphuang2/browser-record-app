@@ -17,12 +17,13 @@ export const HTTP_FOUND = 302;
 export const HTTP_BAD_REQUEST = 400;
 export const HTTP_FORBIDDEN = 403;
 export const UNAUTHORIZED_TOAST = 'You are not authorized';
-export const NO_REPLAYS_FOUND_TOAST = 'No replays found';
+export const NO_CUSTOMERS_FOUND_TOAST = 'No customers found';
+export const NO_REPLAY_FOUND_TOAST = 'No replay found';
 export const FAILED_TO_FIND_REPLAY_TOAST = 'Could not find replay';
 
 export const DURATION_FILTER_KEY = 'durationFilter';
 export const DEVICE_FILTER_KEY = 'deviceFilter';
-export const NUM_REPLAYS_TO_SHOW_FILTER_KEY = 'numReplaysToShow';
+export const NUM_CUSTOMERS_TO_SHOW_FILTER_KEY = 'numCustomersToShow';
 export const TOTAL_CART_PRICE_FILTER_KEY = 'totalCartPriceFilter';
 export const ITEM_COUNT_FILTER_KEY = 'itemCountFilter';
 export const DATE_RANGE_FILTER_KEY = 'dateRangeFilter';

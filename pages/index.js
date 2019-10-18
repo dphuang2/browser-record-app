@@ -28,14 +28,15 @@ import {
   HERO_MESSAGE,
   HTTP_UNAUTHORIZED,
   UNAUTHORIZED_TOAST,
-  NO_REPLAYS_FOUND_TOAST,
+  NO_CUSTOMERS_FOUND_TOAST,
   HTTP_NO_CONTENT,
   TOTAL_CART_PRICE_FILTER_KEY,
   DURATION_FILTER_KEY,
   DEVICE_FILTER_KEY,
-  NUM_REPLAYS_TO_SHOW_FILTER_KEY,
+  NUM_CUSTOMERS_TO_SHOW_FILTER_KEY,
   ITEM_COUNT_FILTER_KEY,
   DATE_RANGE_FILTER_KEY,
+  NO_REPLAY_FOUND_TOAST,
 } from '../utils/constants';
 import ReplayListItem from '../components/ReplayListItem';
 import Player from '../components/Player';
@@ -50,7 +51,7 @@ class Index extends React.Component {
       showToast: false,
       toastMessage: '',
       currentReplay: undefined,
-      replays: [],
+      customers: [],
       sortValue: 'TIMESTAMP_DESC',
       datePickerDate: { month: currentDate.getMonth(), year: currentDate.getFullYear()},
       longestDuration: availableFilters[DURATION_FILTER_KEY].defaultValue[1],
@@ -60,19 +61,19 @@ class Index extends React.Component {
       [TOTAL_CART_PRICE_FILTER_KEY]: availableFilters[TOTAL_CART_PRICE_FILTER_KEY].defaultValue,
       [DURATION_FILTER_KEY]: availableFilters[DURATION_FILTER_KEY].defaultValue,
       [DEVICE_FILTER_KEY]: availableFilters[DEVICE_FILTER_KEY].defaultValue,
-      [NUM_REPLAYS_TO_SHOW_FILTER_KEY]: availableFilters[NUM_REPLAYS_TO_SHOW_FILTER_KEY].defaultValue,
+      [NUM_CUSTOMERS_TO_SHOW_FILTER_KEY]: availableFilters[NUM_CUSTOMERS_TO_SHOW_FILTER_KEY].defaultValue,
       [ITEM_COUNT_FILTER_KEY]: availableFilters[ITEM_COUNT_FILTER_KEY].defaultValue,
       lastFilters: {},
     };
     this.resourceListRef = React.createRef();
-    this.replayMap = {};
-
+    this.customerMap = {};
+    this.replayCache = {};
 
     // Bindings
     this.handleSortChange = this.handleSortChange.bind(this);
     this.setToastMessage = this.setToastMessage.bind(this);
     this.handleItemClick = this.handleItemClick.bind(this);
-    this.getReplays = this.getReplays.bind(this);
+    this.getCustomers = this.getCustomers.bind(this);
     this.handleOutsideClick = this.handleOutsideClick.bind(this);
     this.dismissToast = this.dismissToast.bind(this);
     this.handleClearAllFilters = this.handleClearAllFilters.bind(this);
@@ -129,7 +130,7 @@ class Index extends React.Component {
       />
     )
 
-    this.getReplays();
+    this.getCustomers();
   }
 
   setToastMessage(toastMessage) {
@@ -139,28 +140,27 @@ class Index extends React.Component {
     })
   }
 
-  async getReplays() {
+  async getCustomers() {
     const filters = this.getFilters();
     const { shopOrigin } = this.props;
-    const { loading } = this.state;
+    const { loading, sortValue } = this.state;
     if (loading) {
-      this.setToastMessage('No actions allowed while loading replays');
+      this.setToastMessage('No actions allowed while loading customers');
       return;
     }
+    this.replayCache = {};
     this.setState({
       loading: true,
       lastFilters: filters,
-      replays: [],
+      customers: [],
     });
     try {
       const response = await axios.get(`/api/sessions/shop/${shopOrigin}?filters=${encodeURIComponent(JSON.stringify(filters))}`);
-      const { urls, longestDuration, maxTotalCartPrice, maxItemCount } = response.data;
+      let { customers, longestDuration, maxTotalCartPrice, maxItemCount } = response.data;
 
-      if (urls == null) {
-        this.setState({
-          loading: false,
-        });
-        this.setToastMessage(NO_REPLAYS_FOUND_TOAST);
+      if (customers == null) {
+        this.setState({ loading: false });
+        this.setToastMessage(NO_CUSTOMERS_FOUND_TOAST);
         return;
       }
 
@@ -169,43 +169,24 @@ class Index extends React.Component {
         maxTotalCartPrice: Math.ceil(maxTotalCartPrice / 100),
         maxItemCount,
       });
-
-      const getReplay = async (url) => {
-        try {
-          const response = await axios.get(url);
-          const replay = JSON.parse(LZString.decompressFromBase64(response.data));
-          this.replayMap[replay.id] = replay;
-          this.setState(({ replays }) => {
-            replays.push(replay);
-            return { replays };
-          })
-        } catch (error) {
-          // do nothing
-        }
-      };
-
-      let promises = [];
-      for (let i = 0; i < urls.length; i += 1) {
-        const url = urls[i];
-        promises.push(getReplay(url));
+      customers = customers.filter((customer) => customer.id);
+      customers.forEach(customer => {
+        this.customerMap[customer.id] = customer;
+      });
+      if (customers.length == 0) {
+        this.setState({ loading: false });
+        this.setToastMessage(NO_CUSTOMERS_FOUND_TOAST);
+        return;
       }
-      await Promise.all(promises)
-      this.setState(({ replays, sortValue }) => {
-        if (replays.length == 0)
-          this.setToastMessage(NO_REPLAYS_FOUND_TOAST);
-        return {
-          loading: false,
-          replays: replays.sort(sortOptionsMap[sortValue])
-        }
-      })
+      customers = customers.sort(sortOptionsMap[sortValue]);
+      this.setState({
+        customers,
+      });
     } catch (error) {
       if (error.response) {
-        this.setState({
-          loading: false,
-        });
         switch (error.response.status) {
           case HTTP_NO_CONTENT:
-            this.setToastMessage(NO_REPLAYS_FOUND_TOAST);
+            this.setToastMessage(NO_CUSTOMERS_FOUND_TOAST);
             return;
           case HTTP_UNAUTHORIZED:
             this.setToastMessage(UNAUTHORIZED_TOAST);
@@ -213,6 +194,7 @@ class Index extends React.Component {
         }
       }
     }
+    this.setState({ loading: false });
   }
 
   getFilters() {
@@ -273,7 +255,7 @@ class Index extends React.Component {
     }
     await this.handleClearAllFilters();
     if (this.areFiltersStale())
-      this.getReplays();
+      this.getCustomers();
   }
 
   handleOutsideClick(event) {
@@ -283,15 +265,46 @@ class Index extends React.Component {
     event.preventDefault();
   }
 
-  handleItemClick(id) {
-    this.setState({ currentReplay: this.replayMap[id], });
+  async handleItemClick(id) {
+    if (this.replayCache[id] != undefined) {
+      this.setState({ currentReplay: this.replayCache[id] });
+      return;
+    }
+    const { shopOrigin } = this.props;
+    this.setState({
+      loading: true,
+    });
+    try {
+      let response = await axios.get(`/api/sessions/shop/${shopOrigin}/customer/${encodeURIComponent(JSON.stringify(this.customerMap[id]))}`);
+      response = await axios.get(response.data);
+      const replay = JSON.parse(LZString.decompressFromBase64(response.data))
+      if (replay === null) {
+        this.setState({ loading: false });
+        this.setToastMessage(NO_REPLAY_FOUND_TOAST);
+        return;
+      }
+      this.setState({ currentReplay: replay });
+      this.replayCache[id] = replay;
+    } catch (error) {
+      if (error.response) {
+        switch (error.response.status) {
+          case HTTP_NO_CONTENT:
+            this.setToastMessage(NO_CUSTOMERS_FOUND_TOAST);
+            return;
+          case HTTP_UNAUTHORIZED:
+            this.setToastMessage(UNAUTHORIZED_TOAST);
+            return;
+        }
+      }
+    }
+    this.setState({ loading: false });
   }
 
   handleSortChange(sortValue) {
     this.setState((state) => {
       return {
         sortValue,
-        replays: state.replays.sort(sortOptionsMap[sortValue])
+        customers: state.customers.sort(sortOptionsMap[sortValue])
       }
     });
   }
@@ -303,7 +316,7 @@ class Index extends React.Component {
   render() {
     const {
       loading,
-      replays,
+      customers,
       sortValue,
       currentReplay,
       showToast,
@@ -325,19 +338,19 @@ class Index extends React.Component {
 
     const filters = [
       {
-        key: NUM_REPLAYS_TO_SHOW_FILTER_KEY,
-        label: 'Maximum number of replays to show',
+        key: NUM_CUSTOMERS_TO_SHOW_FILTER_KEY,
+        label: 'Maximum number of customers to show',
         filter: (
           <RangeSlider
-            label="Maximum number of replays to show"
+            label="Maximum number of customers to show"
             labelHidden
-            value={this.state[NUM_REPLAYS_TO_SHOW_FILTER_KEY]}
+            value={this.state[NUM_CUSTOMERS_TO_SHOW_FILTER_KEY]}
             output
             min={0}
             max={200}
             step={1}
-            onChange={this.handleFilterChange(NUM_REPLAYS_TO_SHOW_FILTER_KEY)}
-            suffix="replays"
+            onChange={this.handleFilterChange(NUM_CUSTOMERS_TO_SHOW_FILTER_KEY)}
+            suffix="customers"
           />
         ),
       },
@@ -438,7 +451,7 @@ class Index extends React.Component {
       >
         <ButtonGroup segmented>
           <Button loading={loading} onClick={this.clearFilters}>Clear Filters</Button>
-          <Button primary={!areFiltersStale} destructive={areFiltersStale} loading={loading} onClick={this.getReplays}>
+          <Button primary={!areFiltersStale} destructive={areFiltersStale} loading={loading} onClick={this.getCustomers}>
             Refresh
           </Button>
         </ButtonGroup>
@@ -466,11 +479,11 @@ class Index extends React.Component {
             <div ref={this.resourceListRef}>
               <ResourceList
                 loading={loading}
-                resourceName={{ singular: 'replay', plural: 'replays' }}
+                resourceName={{ singular: 'customer', plural: 'customers' }}
                 sortValue={sortValue}
                 sortOptions={sortOptions}
                 onSortChange={this.handleSortChange}
-                items={replays}
+                items={customers}
                 showHeader
                 renderItem={item => <ReplayListItem handleItemClick={this.handleItemClick} {...item} />}
                 filterControl={filterControl}

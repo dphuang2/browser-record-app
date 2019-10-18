@@ -21,7 +21,7 @@ function createSortCompare(getter, direction) {
     return (getter(a) > getter(b) ? 1 : -1) * direction;
   };
 }
-const getTimestamp = x => x.timestamp;
+const getStartTime = x => x.startTime;
 const getDuration = x => x.duration;
 const getNumClicks = x => x.numClicks;
 const getPageLoads = x => x.pageLoads;
@@ -30,8 +30,8 @@ const getTotalCartPrice = x => x.lastTotalCartPrice;
 const getItemCount = x => x.lastItemCount;
 const getClicksPerSecond = x => x.numClicks / x.duration;
 const sortOptionsMap = {
-  'TIMESTAMP_DESC': createSortCompare(getTimestamp, -1),
-  'TIMESTAMP_ASC': createSortCompare(getTimestamp, 1),
+  'TIMESTAMP_DESC': createSortCompare(getStartTime, -1),
+  'TIMESTAMP_ASC': createSortCompare(getStartTime, 1),
   'CLICKS_DESC': createSortCompare(getNumClicks, -1),
   'CLICKS_ASC': createSortCompare(getNumClicks, 1),
   'PAGE_LOADS_DESC': createSortCompare(getPageLoads, -1),

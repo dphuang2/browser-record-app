@@ -38,8 +38,8 @@
       ]
     },
     {
-      "src": "/api/sessions/id/([0-9a-fA-F]{8}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{4}\\-[0-9a-fA-F]{12})$",
-      "dest": "/api/sessions.js?id=$1",
+      "src": "/api/sessions/shop/(.*myshopify.com)/customer/(.*)$",
+      "dest": "/api/sessions.js?shop=$1&customer=$2",
       "methods": [
         "GET"
       ]

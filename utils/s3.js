@@ -125,20 +125,15 @@ async function getSignedUrlForSession(shop, id) {
 /** 
  * Aggregate session events from S3 and return combined object signed url
  */
-async function getSessionUrlFromS3(shop, customer, filters) {
+async function getSessionUrlFromS3(shop, customer) {
   /**
    * lets get all of the objects
    */
-  const contents = await listObjects(generateSessionFolderKey(shop, customer.sessionId));
+  const contents = await listObjects(generateSessionFolderKey(shop, customer.id));
   /**
    * If our session does not actually exist on S3, return early here
    */
   if (contents.length === 0) return;
-  /**
-   * Get fresh session object if not stale
-   */
-  if (customer.stale !== undefined && !customer.stale)
-    return await getSignedUrlForSession(shop, customer.sessionId);
   /**
    * This customer has no session data so return undefined
    */
@@ -172,22 +167,11 @@ async function getSessionUrlFromS3(shop, customer, filters) {
    * Now it is time to combine the objects
    */
   let session = {
-    id: customer.sessionId,
     events: [],
-    pageLoads: 0,
-    numClicks: 0,
-    duration: null,
-    timestamp: null,
     ...customer,
   }
   objects.sort((a, b) => { return a.timestamp - b.timestamp; });
-  session.timestamp = objects[0].timestamp;
-  objects.forEach((chunk) => {
-    Array.prototype.push.apply(session.events, chunk.events);
-    session.pageLoads += chunk.pageLoads;
-    session.numClicks += chunk.numClicks;
-  });
-  session.duration = (session.events[session.events.length - 1].timestamp - session.events[0].timestamp) / 1000;
+  objects.forEach((chunk) => { Array.prototype.push.apply(session.events, chunk.events); });
   promises = [];
   /**
    * Start uploading constructed session object to s3
@@ -195,7 +179,7 @@ async function getSessionUrlFromS3(shop, customer, filters) {
   promises.push(uploadSessionToS3(
     JSON.stringify(session),
     shop,
-    customer.sessionId
+    customer.id
   ));
   /**
    * Start a delete operation for all the chunks we consumed
@@ -205,32 +189,11 @@ async function getSessionUrlFromS3(shop, customer, filters) {
   }).map(content => {
     return { Key: content.Key };
   })));
-  /**
-   * Update MongoDB data for future filtering/caching during queries
-   */
-  promises.push(Customer.updateOne({ sessionId: customer.sessionId }, {
-    $set: {
-      pageLoads: session.pageLoads,
-      numClicks: session.numClicks,
-      timestamp: session.timestamp,
-      sessionDuration: session.duration,
-      stale: false,
-    }
-  }));
   await Promise.all(promises);
-  /**
-   * Apply any filters
-   */
-  if (filters) {
-    for (const [key, value] of Object.entries(filters)) {
-      if (availableFilters[key] != null && !availableFilters[key]['functional'](value)(session))
-        return undefined;
-    }
-  }
   /**
    * Get signed URL for session and return that
    */
-  return await getSignedUrlForSession(shop, customer.sessionId);
+  return await getSignedUrlForSession(shop, customer.id);
 }
 
 export { uploadSessionChunkToS3, getSessionUrlFromS3 }

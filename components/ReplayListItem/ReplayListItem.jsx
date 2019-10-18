@@ -46,8 +46,8 @@ const ReplayListItem = function mrl(props) {
     country,
     locationAvailable,
     id,
-    timestamp,
-    duration,
+    startTime,
+    sessionDuration,
     numClicks,
     handleItemClick,
     pageLoads,
@@ -70,7 +70,7 @@ const ReplayListItem = function mrl(props) {
   }
 
   // Generate date string
-  const date = new Date(timestamp);
+  const date = new Date(startTime);
   const dateString = date.toLocaleDateString(undefined, {
     month: 'long',
     day: 'numeric',
@@ -78,8 +78,8 @@ const ReplayListItem = function mrl(props) {
     minute: 'numeric',
   });
 
-  // Generate duration string
-  const durationInSeconds = parseInt(duration, 10);
+  // Generate sessionDuration string
+  const durationInSeconds = parseInt(sessionDuration, 10);
   const durationString = durationStringFromSeconds(durationInSeconds);
 
   return (
@@ -207,8 +207,8 @@ ReplayListItem.propTypes = {
   browser: PropTypes.string.isRequired,
   region: PropTypes.string.isRequired,
   locationAvailable: PropTypes.bool.isRequired,
-  timestamp: PropTypes.number.isRequired,
-  duration: PropTypes.number.isRequired,
+  startTime: PropTypes.number.isRequired,
+  sessionDuration: PropTypes.number.isRequired,
   numClicks: PropTypes.number.isRequired,
   pageLoads: PropTypes.number.isRequired,
   handleItemClick: PropTypes.func.isRequired,

@@ -44,19 +44,12 @@ export default async (req, res) => {
         browser: agentData.browser.name,
         os: agentData.os.name,
         device: (agentData.device.type ? 'mobile' : 'desktop'),
-        shop: body.shop,
-        sessionId: body.id,
         region,
         country,
         locationAvailable,
-        stale: true, // We haven't processed chunks so default is true
+        ...body,
       };
-      /**
-       * We want to replace the existing customer document because the data
-       * could be stale and we want the stale field to be true so we don't
-       * filter based on stale metadata.
-       */
-      await Customer.updateOne({ sessionId: customer.sessionId }, customer, { upsert: true });
+      await Customer.updateOne({ id: customer.id }, customer, { upsert: true });
       res.status(HTTP_NO_CONTENT).send();
     }
   } catch (error) {
