@@ -168,7 +168,7 @@ class Index extends React.Component {
       this.setState((state) => {
         return {
           longestDuration: Math.ceil(Math.max(longestDuration, state.longestDuration)),
-          maxTotalCartPrice: Math.ceil(Math.max(maxTotalCartPrice, state.maxTotalCartPrice / 100)),
+          maxTotalCartPrice: Math.ceil(Math.max(maxTotalCartPrice / 100, state.maxTotalCartPrice / 100)),
           maxItemCount: Math.max(maxItemCount, state.maxItemCount),
         }
       });

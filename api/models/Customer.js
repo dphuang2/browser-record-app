@@ -17,7 +17,7 @@ const customerSchema = new Schema({
   startTime: Number,
   lastTotalCartPrice: Number,
   lastItemCount: Number,
-  maxTotalCartPrice: Number,
+  maxTotalCartPrice: Number, // cart price in cents
   maxItemCount: Number,
 });
 
