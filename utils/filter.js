@@ -13,7 +13,7 @@ const nullFilter = [{ id: { $exists: true } }];
 const DEFAULT_NUM_CUSTOMERS_TO_SHOW = 20;
 const DEFAULT_DURATION_FILTER_MAX = 60;
 const DEFAULT_ITEM_COUNT_MAX = 10;
-const DEFAULT_TOTAL_CART_PRICE_MAX = 100.0;
+const DEFAULT_TOTAL_CART_PRICE_MAX = 10000.0;
 
 function disambiguateLabel(key, value) {
   switch (key) {
