@@ -82,6 +82,7 @@ class Index extends React.Component {
     this.areAllFiltersDefault = this.areAllFiltersDefault.bind(this);
     this.isFilterDefault = this.isFilterDefault.bind(this);
     this.handleMonthChange = this.handleMonthChange.bind(this);
+    this.handleFilterChange = this.handleFilterChange.bind(this);
   }
 
   async componentDidMount() {
@@ -164,10 +165,12 @@ class Index extends React.Component {
         return;
       }
 
-      this.setState({
-        longestDuration: Math.ceil(longestDuration),
-        maxTotalCartPrice: Math.ceil(maxTotalCartPrice / 100),
-        maxItemCount,
+      this.setState((state) => {
+        return {
+          longestDuration: Math.ceil(Math.max(longestDuration, state.longestDuration)),
+          maxTotalCartPrice: Math.ceil(Math.max(maxTotalCartPrice, state.maxTotalCartPrice / 100)),
+          maxItemCount: Math.max(maxItemCount, state.maxItemCount),
+        }
       });
       customers = customers.filter((customer) => customer.id);
       customers.forEach(customer => {
