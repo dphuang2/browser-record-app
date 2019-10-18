@@ -52,6 +52,7 @@ export default async (req, res) => {
         parsed.timestamp,
         parsed.events.length
       ));
+      console.log(parsed.timestamp);
       /**
        * Update customer data
        */
@@ -96,6 +97,8 @@ export default async (req, res) => {
           const query = {
             $and: [
               { shop },
+              { startTime: { $exists: true } },
+              { id: { $exists: true } },
               {
                 $and: filtersToMongoFilters(filters)
               }

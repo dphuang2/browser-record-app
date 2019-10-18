@@ -171,6 +171,7 @@ async function getSessionUrlFromS3(shop, customer) {
     ...customer,
   }
   objects.sort((a, b) => { return a.timestamp - b.timestamp; });
+  session.timestamp = objects[0].timestamp;
   objects.forEach((chunk) => { Array.prototype.push.apply(session.events, chunk.events); });
   promises = [];
   /**
