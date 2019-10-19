@@ -345,8 +345,6 @@ class Index extends React.Component {
         label: 'Maximum number of customers to show',
         filter: (
           <RangeSlider
-            label="Maximum number of customers to show"
-            labelHidden
             value={this.state[NUM_CUSTOMERS_TO_SHOW_FILTER_KEY]}
             output
             min={0}
@@ -377,8 +375,6 @@ class Index extends React.Component {
         label: 'Item count between',
         filter: (
           <RangeSlider
-            label="Item count between"
-            labelHidden
             value={this.isFilterDefault(ITEM_COUNT_FILTER_KEY) ? [0,
               maxItemCount] : this.state[ITEM_COUNT_FILTER_KEY]}
             output
@@ -395,8 +391,6 @@ class Index extends React.Component {
         label: 'Total cart price between',
         filter: (
           <RangeSlider
-            label="Total cart price between"
-            labelHidden
             value={this.isFilterDefault(TOTAL_CART_PRICE_FILTER_KEY) ? [0,
               maxTotalCartPrice] : this.state[TOTAL_CART_PRICE_FILTER_KEY]}
             output
@@ -413,8 +407,6 @@ class Index extends React.Component {
         label: 'Duration between',
         filter: (
           <RangeSlider
-            label="Duration of session is between"
-            labelHidden
             value={this.isFilterDefault(DURATION_FILTER_KEY) ? [0,
               longestDuration] : this.state[DURATION_FILTER_KEY]}
             output
@@ -431,8 +423,6 @@ class Index extends React.Component {
         label: 'Device',
         filter: (
           <ChoiceList
-            title="Device"
-            titleHidden
             choices={[
               { label: 'Desktop', value: 'desktop' },
               { label: 'Mobile', value: 'mobile' },
