@@ -41,8 +41,8 @@ const availableFilters = {
     mongodb: (bounds) => {
       const start = new Date(bounds.start);
       const end = new Date(bounds.end);
-      // Increment end by 1 day if they are the same date
-      if (start.getDate() === end.getDate()) end.setDate(end.getDate() + 1);
+      // Increment end by 1 day
+      end.setDate(end.getDate() + 1);
       return {
         $or: [
           /**
